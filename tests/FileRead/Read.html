@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<body>
+<div id="drop_zone">Drop files here</div>
+<output id="list"></output>
+<script>
+
+//Read FileEntry to get Native File object.
+var readFile = function(fileEntry, callback) {
+	//Get File object from FileEntry
+	fileEntry.file(function(callback, file){
+		if(callback){
+			callback(file);
+		}
+	}.bind(this, callback));
+};
+
+var readFileTree = function(itemEntry, fileCallback){	
+	if(itemEntry.isFile){
+		readFile(itemEntry, itemCallback);
+	}else if(itemEntry.isDirectory){
+		var dirReader = itemEntry.createReader();
+		dirReader.readEntries(function(entries){
+			var idx = entries.length;
+			while(idx--){
+				readFileTree(entries[idx], itemCallback);
+			}	
+		});
+	}			
+};
+
+var uploadFile = function(file){
+	// List some properties.
+	var output = [];
+
+	output.push('<li><strong>', escape(file.name), '</strong> (', file.type || 'n/a', ') - ',
+	file.size, ' bytes, last modified: ',
+	file.lastModifiedDate ? file.lastModifiedDate.toLocaleDateString() : 'n/a',
+	'</li>');
+	document.getElementById('list').innerHTML = '<ul>' + output.join('') + '</ul>';
+}
+
+function handleFileSelect(evt) {
+	evt.stopPropagation();
+	evt.preventDefault();
+	//var files = evt.dataTransfer.files; // Target FileList object
+	
+	var dataTransfer = evt.dataTransfer;
+	if(dataTransfer && dataTransfer.items){
+		var items = dataTransfer.items, 
+		len   = items.length,
+		i, entry;
+		for(i=0; i<len; i++){
+			entry = items[i]
+			if(entry.getAsEntry){  //Standard HTML5 API
+				entry = entry.getAsEntry();
+			}else if(entry.webkitGetAsEntry){  //WebKit implementation of HTML5 API.
+				entry = entry.webkitGetAsEntry();
+			}
+			if(entry.isFile){
+				//Handle FileEntry
+				readFile(entry, uploadFile);
+			}else if(entry.isDirectory){
+				//Handle DirectoryEntry
+				readFileTree(entry, uploadFile);
+			}
+		}
+	}
+}
+
+function handleDragOver(evt) {
+	evt.stopPropagation();
+	evt.preventDefault();
+	evt.dataTransfer.dropEffect = 'copy'; // Explicitly show this is a copy.
+}
+// Setup the dnd listeners.
+var dropZone = document.getElementById('drop_zone');
+dropZone.addEventListener('dragover', handleDragOver, false);
+dropZone.addEventListener('drop', handleFileSelect, false);
+</script>
