@@ -270,23 +270,23 @@ $FuncDRA_param = "Function Read-Ahead parameters : $DRA_param"
 benchmark $DRA_param ([ref]$Data_RunDetails) ([ref]$dataDRA_latency) ([ref]$dataDRA_iops) ([ref]$dataDRA_cores) "Data Read Ahead"
 Remove-Item $TestFilePath
 
-## Simulate Data i/o : Lazy Writer
-# $outstandings = 32		# 
-# $threads = 1 			# Equal number of NUMA nodes
-# $TestFilePath = "$Data_drive\diskspd_tmp.dat"
-# $DLW_param = "-c1G -d$duration_run -w100 -b64K -r -h -W -o$outstandings -t$threads -h -L $TestFilePath".Split()
-# $FuncDLW_param = "Function Lazy Writer parameters : $DLW_param"
-# benchmark $DLW_param ([ref]$Data_RunDetails) ([ref]$dataDLW_latency) ([ref]$dataDLW_iops) ([ref]$dataDLW_cores) "Data Lazy Writer"
-# Remove-Item $TestFilePath
+# Simulate Data i/o : Lazy Writer
+$outstandings = 32		# 
+$threads = 1 			# Equal number of NUMA nodes
+$TestFilePath = "$Data_drive\diskspd_tmp.dat"
+$DLW_param = "-c1G -d$duration_run -w100 -b64K -r -h -W -o$outstandings -t$threads -h -L $TestFilePath".Split()
+$FuncDLW_param = "Function Lazy Writer parameters : $DLW_param"
+benchmark $DLW_param ([ref]$Data_RunDetails) ([ref]$dataDLW_latency) ([ref]$dataDLW_iops) ([ref]$dataDLW_cores) "Data Lazy Writer"
+Remove-Item $TestFilePath
 
-## Simulate Log write :
-# $outstandings = 32		# max 116 outstandings
-# $threads = 1 			# Equal number of NUMA nodes (and max 4)
-# $TestFilePath = "$Log_drive\diskspd_tmp.dat"
-# $LRW_param = "-c1G -d$duration_run -w100 -b64K -h -W -o$outstandings -t$threads -h -L $TestFilePath".Split()
-# $FuncLRW_param = "Function Log Writer parameters : $LRW_param"
-# benchmark $LRW_param ([ref]$Data_RunDetails) ([ref]$dataLWR_latency) ([ref]$dataLWR_iops) ([ref]$dataLWR_cores) "Log Writer"
-# Remove-Item $TestFilePath
+# Simulate Log write :
+$outstandings = 32		# max 116 outstandings
+$threads = 1 			# Equal number of NUMA nodes (and max 4)
+$TestFilePath = "$Log_drive\diskspd_tmp.dat"
+$LRW_param = "-c1G -d$duration_run -w100 -b64K -h -W -o$outstandings -t$threads -h -L $TestFilePath".Split()
+$FuncLRW_param = "Function Log Writer parameters : $LRW_param"
+benchmark $LRW_param ([ref]$Data_RunDetails) ([ref]$dataLWR_latency) ([ref]$dataLWR_iops) ([ref]$dataLWR_cores) "Log Writer"
+Remove-Item $TestFilePath
 
 if ($to_the_limits_switch){
 	$TestFilePath = "$Log_drive\diskspd_tmp.dat"
