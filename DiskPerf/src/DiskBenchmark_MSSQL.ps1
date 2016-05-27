@@ -14,6 +14,7 @@
 #  - 0.8  - 12/02/2016 : to_the_limits parameters
 #  - 0.8b - 18/02/2016 : Updates on to_the_limits bench
 #  - 0.9a - 08/04/2016 : Output to csv file (csv switch param)
+#  - 1.0  - 27/05/2016 : Usual workload
 #########################################################################################################
 Param(
     [Parameter(HelpMessage="Data drive")]
@@ -287,6 +288,30 @@ $LRW_param = "-c1G -d$duration_run -w100 -b64K -h -W -o$outstandings -t$threads 
 $FuncLRW_param = "Function Log Writer parameters : $LRW_param"
 benchmark $LRW_param ([ref]$Data_RunDetails) ([ref]$dataLWR_latency) ([ref]$dataLWR_iops) ([ref]$dataLWR_cores) "Log Writer"
 Remove-Item $TestFilePath
+
+# Simulate an usual SQL Instance workload (based on a Sharepoint SQL Instance)
+
+#Day
+#Page writes/sec 		= 60%
+#Page reads/sec  		= 5%
+#Readahead pages/sec		= 10%
+#Checkpoint pages/sec	= 25%
+#
+#Night
+#Page writes/sec 		= 20%
+#Page reads/sec  		= 35%
+#Readahead pages/sec		= 35%
+#Checkpoint pages/sec	= 10%
+
+# Working hours
+#$outstandings = 32		# max 116 outstandings
+#$threads = 1 			# Equal number of NUMA nodes (and max 4)
+#$TestFilePath1 = "$Log_drive\diskspd_tmp.dat"
+#$GnralWorkload1_param = "-c1G -d$duration_run -w100 -b64K -h -W -o$outstandings -t$threads -h -L $TestFilePath".Split()
+#$FuncGnralWorkload1_param = "Simulate an usual workload (based on a Sharepoint SQL Instance) : $GnralWorkload1_param"
+#benchmark $GnralWorkload1_param ([ref]$Data_RunDetails) ([ref]$dataLWR_latency) ([ref]$dataLWR_iops) ([ref]$dataLWR_cores) "Usual Workload"
+#Remove-Item $TestFilePath1
+
 
 if ($to_the_limits_switch){
 	$TestFilePath = "$Log_drive\diskspd_tmp.dat"
