@@ -14,6 +14,7 @@
 #  - 0.8  - 12/02/2016 : to_the_limits parameters
 #  - 0.8b - 18/02/2016 : Updates on to_the_limits bench
 #  - 0.9a - 08/04/2016 : Output to csv file (csv switch param)
+#  - 0.9b - 08/06/2016 : Upgrade to diskspd 2.0.17 + to_the_limits improvements : bench duration + results data + results to CSV
 #  - 1.0  - 27/05/2016 : Usual workload
 #########################################################################################################
 Param(
@@ -25,16 +26,18 @@ Param(
     [String] $Log_drive="C:",
     [Parameter(HelpMessage="Duration (in minute) ; min=5mn")]
     [int] $duration = 5,
+    [Parameter(HelpMessage="File size (in GB)")]
+    [int] $file_size = 5,
     [Parameter(HelpMessage="Write output to CSV file")]
     [alias("csv")]
     [switch] $csv_output,
-    [Parameter(HelpMessage="Benchmark disks like the storage providers do. WARNING : Long test (duration)")]
+    [Parameter(HelpMessage="Benchmark disks like the storage providers do. WARNING : long test (duration)")]
     [alias("to_the_limits")]
     [switch] $to_the_limits_switch
 )
 
 $scriptPath = split-path -parent $MyInvocation.MyCommand.Definition
-$version = "0.9a"
+$version = "0.9b"
 
 
 function generate_CSV{
@@ -183,7 +186,7 @@ function benchmark{
 	}
 }
 
-function benchmark_to_limits([ref]$data_JS_heatMap_data){
+function benchmark_to_limits([ref]$Data_RunDetails, [ref]$data_JS_heatMap_data){
 	$data_JS_heatMap_data.value = "heatMap_data = ["
 	$MaxThreads = $cpuCount * 2 # Launch max 2 threads per core
 	$MaxOutstandings = 64
@@ -192,8 +195,9 @@ function benchmark_to_limits([ref]$data_JS_heatMap_data){
 	while ($threads -le $MaxThreads ){
 		$outstandings = 1
 		while ($outstandings -le $MaxOutstandings){
-			$DiskSPD_param = "-c1G -d$duration -r -w100 -b4K -h -W -o$outstandings -t$threads -L $TestFilePath".Split()
+			$DiskSPD_param = "-c$($file_size)G -d$duration_run -r -w100 -b4K -Sh -W -o$outstandings -t$threads -L $TestFilePath".Split()
 			$exe = "$scriptPath\diskspd.exe"
+			Write-Output "Run : $DiskSPD_param"
 			&$exe $DiskSPD_param | Tee-Object -Variable result | Out-Null
 			if($result){
 				foreach ($line in $result) {if ($line -like "total:*") { $total=$line; break } }
@@ -202,7 +206,18 @@ function benchmark_to_limits([ref]$data_JS_heatMap_data){
 				$data_JS_heatMap_data.value += "{threads: $threads, outstandings: $outstandings, iops: $iops, latency: $latency},"
 				$data_JS_heatMap_data.value = $($data_JS_heatMap_data.value -replace ".{1}$") + "]"
 				if( -Not $csv_output){ generate_HTML }
+				Write-Output "TTL : threads: $threads, outstandings: $outstandings, iops: $iops, latency: $latency"
+				
+				$check = New-Object -TypeName PSObject
+				Add-Member -InputObject $check -Type NoteProperty -Name "Timestamp" 		-Value $timestamp 	
+				Add-Member -InputObject $check -Type NoteProperty -Name "Function" 			-Value "To the limits"
+				Add-Member -InputObject $check -Type NoteProperty -Name "Parameters"		-Value "$DiskSPD_param"
+				Add-Member -InputObject $check -Type NoteProperty -Name "IOPS"				-Value $iops
+				Add-Member -InputObject $check -Type NoteProperty -Name "Latency (ms) AVG" 	-Value $latency
+			
 				$data_JS_heatMap_data.value = $($data_JS_heatMap_data.value -replace ".{1}$") + ","
+				
+				$Data_RunDetails.value += $check
 			}
 			$outstandings=$outstandings*2
 		}
@@ -226,7 +241,7 @@ $dataLWR_iops			= ""
 $dataLWR_latency		= ""
 $dataLWR_cores			= ""
 $dataheatMap_data		= ""
-$Data_RunDetails				= @()
+$Data_RunDetails		= @()
 
 
 $timestamp 	= [DateTime]::Now.ToString("yyyyMMdd_HHmmss")
@@ -266,7 +281,7 @@ if($duration -le 5){
 $outstandings = 128 	# 128 = Standard Edition ; 5000 = Enterprise Edition
 $threads = $cpuCount	# Depends of MAX Dop and Workload
 $TestFilePath = "$Data_drive\diskspd_tmp.dat"
-$DRA_param = "-c1G -d$duration_run -w0 -b512K -h -W -o$outstandings -t$threads -h -L $TestFilePath".Split()
+$DRA_param = "-c$($file_size)G -d$duration_run -w0 -b512K -si -Sh -W -o$outstandings -t$threads -L $TestFilePath".Split()
 $FuncDRA_param = "Function Read-Ahead parameters : $DRA_param"
 benchmark $DRA_param ([ref]$Data_RunDetails) ([ref]$dataDRA_latency) ([ref]$dataDRA_iops) ([ref]$dataDRA_cores) "Data Read Ahead"
 Remove-Item $TestFilePath
@@ -275,7 +290,7 @@ Remove-Item $TestFilePath
 $outstandings = 32		# 
 $threads = 1 			# Equal number of NUMA nodes
 $TestFilePath = "$Data_drive\diskspd_tmp.dat"
-$DLW_param = "-c1G -d$duration_run -w100 -b64K -r -h -W -o$outstandings -t$threads -h -L $TestFilePath".Split()
+$DLW_param = "-c$($file_size)G -d$duration_run -w100 -b64K -r -Sh -W -o$outstandings -t$threads -L $TestFilePath".Split()
 $FuncDLW_param = "Function Lazy Writer parameters : $DLW_param"
 benchmark $DLW_param ([ref]$Data_RunDetails) ([ref]$dataDLW_latency) ([ref]$dataDLW_iops) ([ref]$dataDLW_cores) "Data Lazy Writer"
 Remove-Item $TestFilePath
@@ -284,7 +299,7 @@ Remove-Item $TestFilePath
 $outstandings = 32		# max 116 outstandings
 $threads = 1 			# Equal number of NUMA nodes (and max 4)
 $TestFilePath = "$Log_drive\diskspd_tmp.dat"
-$LRW_param = "-c1G -d$duration_run -w100 -b64K -h -W -o$outstandings -t$threads -h -L $TestFilePath".Split()
+$LRW_param = "-c$($file_size)G -d$duration_run -w100 -b64K -Sh -W -o$outstandings -t$threads -L $TestFilePath".Split()
 $FuncLRW_param = "Function Log Writer parameters : $LRW_param"
 benchmark $LRW_param ([ref]$Data_RunDetails) ([ref]$dataLWR_latency) ([ref]$dataLWR_iops) ([ref]$dataLWR_cores) "Log Writer"
 Remove-Item $TestFilePath
@@ -294,20 +309,20 @@ Remove-Item $TestFilePath
 #Day
 #Page writes/sec 		= 60%
 #Page reads/sec  		= 5%
-#Readahead pages/sec		= 10%
+#Readahead pages/sec	= 10%
 #Checkpoint pages/sec	= 25%
 #
 #Night
 #Page writes/sec 		= 20%
 #Page reads/sec  		= 35%
-#Readahead pages/sec		= 35%
+#Readahead pages/sec	= 35%
 #Checkpoint pages/sec	= 10%
 
 # Working hours
 #$outstandings = 32		# max 116 outstandings
 #$threads = 1 			# Equal number of NUMA nodes (and max 4)
 #$TestFilePath1 = "$Log_drive\diskspd_tmp.dat"
-#$GnralWorkload1_param = "-c1G -d$duration_run -w100 -b64K -h -W -o$outstandings -t$threads -h -L $TestFilePath".Split()
+#$GnralWorkload1_param = "-c$($file_size)G -d$duration_run -w100 -b64K -Sh -W -o$outstandings -t$threads -L $TestFilePath".Split()
 #$FuncGnralWorkload1_param = "Simulate an usual workload (based on a Sharepoint SQL Instance) : $GnralWorkload1_param"
 #benchmark $GnralWorkload1_param ([ref]$Data_RunDetails) ([ref]$dataLWR_latency) ([ref]$dataLWR_iops) ([ref]$dataLWR_cores) "Usual Workload"
 #Remove-Item $TestFilePath1
@@ -315,7 +330,7 @@ Remove-Item $TestFilePath
 
 if ($to_the_limits_switch){
 	$TestFilePath = "$Log_drive\diskspd_tmp.dat"
-	benchmark_to_limits ([ref]$dataheatMap_data)
+	benchmark_to_limits ([ref]$Data_RunDetails) ([ref]$dataheatMap_data)
 	Remove-Item $TestFilePath
 }
 
