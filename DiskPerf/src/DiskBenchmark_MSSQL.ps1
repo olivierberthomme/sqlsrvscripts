@@ -16,6 +16,7 @@
 #  - 0.9a - 08/04/2016 : Output to csv file (csv switch param)
 #  - 0.9b - 08/06/2016 : Upgrade to diskspd 2.0.17 + to_the_limits improvements : bench duration + results data + results to CSV
 #  - 1.0  - 27/05/2016 : Usual workload
+#  - 1.0b - 13/06/2016 : Usual workload implemented
 #########################################################################################################
 Param(
     [Parameter(HelpMessage="Data drive")]
@@ -37,7 +38,7 @@ Param(
 )
 
 $scriptPath = split-path -parent $MyInvocation.MyCommand.Definition
-$version = "0.9b"
+$version = "1.0b"
 
 
 function generate_CSV{
@@ -90,6 +91,14 @@ function generate_HTML{
 	Foreach-Object {$_ -replace '//#### dataLWR_iops ####', 			$dataLWR_iops}  | 
 	Foreach-Object {$_ -replace '//#### dataLWR_latency ####', 			$dataLWR_latency}  | 
 	Foreach-Object {$_ -replace '//#### dataLWR_cores ####', 			$dataLWR_cores}  |  
+	Foreach-Object {$_ -replace '#### Function param DayWrkLoad ####', 	$FuncDayWrkLoad_param}  | 
+	Foreach-Object {$_ -replace '//#### dataDayWrkLoad_iops ####', 		$dataDayWrkLoad_iops}  | 
+	Foreach-Object {$_ -replace '//#### dataDayWrkLoad_latency ####', 	$dataDayWrkLoad_latency}  | 
+	Foreach-Object {$_ -replace '//#### dataDayWrkLoad_cores ####', 	$dataDayWrkLoad_cores}  |  
+	Foreach-Object {$_ -replace '#### Function param NightWrkLoad ####',$FuncNightWrkLoad_param}  | 
+	Foreach-Object {$_ -replace '//#### dataNightWrkLoad_iops ####', 	$dataNightWrkLoad_iops}  | 
+	Foreach-Object {$_ -replace '//#### dataNightWrkLoad_latency ####', $dataNightWrkLoad_latency}  | 
+	Foreach-Object {$_ -replace '//#### dataNightWrkLoad_cores ####', 	$dataNightWrkLoad_cores}  |  
 	Foreach-Object {$_ -replace '//#### dataheatMap_data ####', 		$dataheatMap_data}  | 
 	Out-File -Encoding "UTF8" $output_HTML_file
 }
@@ -102,6 +111,7 @@ function benchmark{
 			[ref]$Data_JSScript_iops,
 			[ref]$Data_JSScript_cores,
 			[String]$functionSimulated)
+	Write-Output "Tested function : $functionSimulated"
 	Write-Output "Parameters : $Parameters"
 	$i=0
 	$Data_JSScript_latency.value = ""
@@ -149,8 +159,9 @@ function benchmark{
 			$KernelMode = "name: 'KernelMode', data:["
 			$get_cores=0
 			foreach ($line in $result) {
+				if ($get_cores -ge 1 -and ( $line -match "^(-)?$" -or $line -match "^(\s)*\d{1,}\|(\s)*0.00%\|(\s)*0.00%\|(\s)*0.00%\|(\s)*0.00%")) 		{ break}
 				if ($line -match "^(\s)*\d{1,}")
-				{	
+				{
 					if($get_cores -eq 0) 	{ 
 						$UserMode 	+= " { core: " + $get_cores + ",count: " + $($line.Split("|")[2].Trim() -replace ".{2}$") + " }"
 						$KernelMode += " { core: " + $get_cores + ",count: " + $($line.Split("|")[3].Trim() -replace ".{2}$") + " }"
@@ -165,7 +176,6 @@ function benchmark{
 					
 					$get_cores++ 
 				} 
-				if ($get_cores -ge 1 -and $line -match "^(-)?$") 		{ break}
 			}
 			$UserMode += "]"
 			$KernelMode += "]"
@@ -240,6 +250,14 @@ $FuncLRW_param			= "Function Log Writer parameters : "
 $dataLWR_iops			= ""
 $dataLWR_latency		= ""
 $dataLWR_cores			= ""
+$FuncDayWrkLoad_param		= "Simulate working-hours workload parameters : "
+$dataDayWrkLoad_iops		= ""
+$dataDayWrkLoad_latency		= ""
+$dataDayWrkLoad_cores		= ""
+$FuncNightWrkLoad_param		= "Simulate non working-hours workload parameters : "
+$dataNightWrkLoad_iops		= ""
+$dataNightWrkLoad_latency	= ""
+$dataNightWrkLoad_cores		= ""
 $dataheatMap_data		= ""
 $Data_RunDetails		= @()
 
@@ -266,13 +284,13 @@ if($cpuCount -le 4){ $cpuCount = 4 }
 ## Compute number of run and duration for each run
 $nbr_run=3
 $duration_run=20
-if($duration -le 5){
+if($duration -le 10){
 	$nbr_run=3
 	$duration_run=20
     $duration = 20
 } else {
 	$nbr_run = 5
-	$duration_run = ($duration * 60 / 5 / 3 ) - 5
+	$duration_run = ($duration * 60 / 5 / 5 ) - 5
     $duration = $duration*60
 }
 
@@ -305,27 +323,34 @@ benchmark $LRW_param ([ref]$Data_RunDetails) ([ref]$dataLWR_latency) ([ref]$data
 Remove-Item $TestFilePath
 
 # Simulate an usual SQL Instance workload (based on a Sharepoint SQL Instance)
-
 #Day
-#Page writes/sec 		= 60%
-#Page reads/sec  		= 5%
-#Readahead pages/sec	= 10%
-#Checkpoint pages/sec	= 25%
-#
-#Night
-#Page writes/sec 		= 20%
-#Page reads/sec  		= 35%
-#Readahead pages/sec	= 35%
-#Checkpoint pages/sec	= 10%
+#Page writes 		= 60%
+#Page reads  		= 5%
+#Readahead pages	= 10%
+#Checkpoint pages	= 25%
+# ==> Read/Write = 15/85 ; io=32KB ; random ; threads=cpuCount ; outstandings = 4
+$outstandings = 4		#
+$threads = $cpuCount	# Depends of MAX Dop and Workload
+$TestFilePath = "$Data_drive\diskspd_tmp.dat"
+$DayWrkLoad_param = "-c$($file_size)G -d$duration_run -w85 -b32K -Sh -r -W -o$outstandings -t$threads -L $TestFilePath".Split()
+$FuncDayWrkLoad_param = "Function Log Writer parameters : $DayWrkLoad_param"
+benchmark $DayWrkLoad_param ([ref]$Data_RunDetails) ([ref]$dataDayWrkLoad_latency) ([ref]$dataDayWrkLoad_iops) ([ref]$dataDayWrkLoad_cores) "Working hours workload"
+Remove-Item $TestFilePath
 
-# Working hours
-#$outstandings = 32		# max 116 outstandings
-#$threads = 1 			# Equal number of NUMA nodes (and max 4)
-#$TestFilePath1 = "$Log_drive\diskspd_tmp.dat"
-#$GnralWorkload1_param = "-c$($file_size)G -d$duration_run -w100 -b64K -Sh -W -o$outstandings -t$threads -L $TestFilePath".Split()
-#$FuncGnralWorkload1_param = "Simulate an usual workload (based on a Sharepoint SQL Instance) : $GnralWorkload1_param"
-#benchmark $GnralWorkload1_param ([ref]$Data_RunDetails) ([ref]$dataLWR_latency) ([ref]$dataLWR_iops) ([ref]$dataLWR_cores) "Usual Workload"
-#Remove-Item $TestFilePath1
+# Simulate an usual SQL Instance workload (based on a Sharepoint SQL Instance)
+#Night
+#Page writes 		= 20%
+#Page reads  		= 35%
+#Readahead pages	= 35%
+#Checkpoint pages	= 10%
+# ==> Read/Write = 70/30 ; io=64KB ; random ; threads=cpuCount ; outstandings = 16
+$outstandings = 16		#
+$threads = $cpuCount	# Depends of MAX Dop and Workload
+$TestFilePath = "$Data_drive\diskspd_tmp.dat"
+$NightWrkLoad_param = "-c$($file_size)G -d$duration_run -w30 -b64K -Sh -r -W -o$outstandings -t$threads -L $TestFilePath".Split()
+$FuncNightWrkLoad_param = "Function Log Writer parameters : $NightWrkLoad_param"
+benchmark $NightWrkLoad_param ([ref]$Data_RunDetails) ([ref]$dataNightWrkLoad_latency) ([ref]$dataNightWrkLoad_iops) ([ref]$dataNightWrkLoad_cores) "Non working hours workload"
+Remove-Item $TestFilePath
 
 
 if ($to_the_limits_switch){
