@@ -17,29 +17,34 @@
 #  - 0.9b - 08/06/2016 : Upgrade to diskspd 2.0.17 + to_the_limits improvements : bench duration + results data + results to CSV
 #  - 1.0  - 27/05/2016 : Usual workload
 #  - 1.0b - 13/06/2016 : Usual workload implemented
+#  - 1.1  - 14/07/2016 : Parameters are now interactive if missing (AMA request)
 #########################################################################################################
 Param(
-    [Parameter(HelpMessage="Data drive")]
-    [alias("data")]
-    [String] $Data_drive="C:",
-    [Parameter(HelpMessage="Log drive")]
-    [alias("log")]
-    [String] $Log_drive="C:",
-    [Parameter(HelpMessage="Duration (in minute) ; min=5mn")]
-    [int] $duration = 5,
-    [Parameter(HelpMessage="File size (in GB)")]
-    [int] $file_size = 5,
-    [Parameter(HelpMessage="Write output to CSV file")]
+    [Parameter(Mandatory = $true, HelpMessage="Data drive (default C:)")]
+    [alias("data")][AllowNull()][AllowEmptyString()]
+    [String] $Data_drive,
+    [Parameter(Mandatory = $true, HelpMessage="Log drive (default C:)")]
+    [alias("log")][AllowNull()][AllowEmptyString()]
+    [String] $Log_drive,
+    [Parameter(Mandatory = $true, HelpMessage="Duration in minute (default 5)")][AllowNull()]
+    [int] $Duration,
+    [Parameter(Mandatory = $true, HelpMessage="File size in GB (default 5)")][AllowNull()]
+    [int] $File_size,
+    [Parameter(HelpMessage="Write output to CSV file (default FALSE=HTML)")]
     [alias("csv")]
-    [switch] $csv_output,
-    [Parameter(HelpMessage="Benchmark disks like the storage providers do. WARNING : long test (duration)")]
+    [switch] $csv_output=$False,
+    [Parameter(HelpMessage="Benchmark disks like the storage providers do (default FALSE=HTML). WARNING : long test (duration)")]
     [alias("to_the_limits")]
-    [switch] $to_the_limits_switch
+    [switch] $to_the_limits_switch=$False
 )
 
-$scriptPath = split-path -parent $MyInvocation.MyCommand.Definition
-$version = "1.0b"
+if (! $Data_drive) 				{ $Data_drive="C:" }
+if (! $Log_drive) 				{ $Log_drive="C:" }
+if (! $Duration) 				{ $Duration=5 }
+if (! $File_size) 				{ $File_size=5 }
 
+$scriptPath = split-path -parent $MyInvocation.MyCommand.Definition
+$version = "1.1"
 
 function generate_CSV{
 	# Make a copy of previous file
@@ -47,8 +52,7 @@ function generate_CSV{
 		$previous_csv = $TRUE
 		if(Test-Path "$output_CSV_file.save"){ Remove-Item "$output_CSV_file.save"}
 		Copy-Item $output_CSV_file "$output_CSV_file.save"
-	}
-	
+	}	
 	#Write-Output $Data_RunDetails
 	$Data_RunDetails | Export-CSV -Path $output_CSV_file
 	
@@ -261,7 +265,6 @@ $dataNightWrkLoad_cores		= ""
 $dataheatMap_data		= ""
 $Data_RunDetails		= @()
 
-
 $timestamp 	= [DateTime]::Now.ToString("yyyyMMdd_HHmmss")
 if( -Not $timestamp) { $timestamp = "0000"}
 
@@ -273,7 +276,6 @@ if( -Not $csv_output){
 	generate_HTML 
 	start $output_HTML_file
 }
-
 
 ## Compute number of CPU
 $cpuCount=0
@@ -293,7 +295,6 @@ if($duration -le 10){
 	$duration_run = ($duration * 60 / 5 / 5 ) - 5
     $duration = $duration*60
 }
-
 
 ### Simulate Data i/o : Read Ahead : 512K
 $outstandings = 128 	# 128 = Standard Edition ; 5000 = Enterprise Edition
@@ -351,7 +352,6 @@ $NightWrkLoad_param = "-c$($file_size)G -d$duration_run -w30 -b64K -Sh -r -W -o$
 $FuncNightWrkLoad_param = "Function Log Writer parameters : $NightWrkLoad_param"
 benchmark $NightWrkLoad_param ([ref]$Data_RunDetails) ([ref]$dataNightWrkLoad_latency) ([ref]$dataNightWrkLoad_iops) ([ref]$dataNightWrkLoad_cores) "Non working hours workload"
 Remove-Item $TestFilePath
-
 
 if ($to_the_limits_switch){
 	$TestFilePath = "$Log_drive\diskspd_tmp.dat"
