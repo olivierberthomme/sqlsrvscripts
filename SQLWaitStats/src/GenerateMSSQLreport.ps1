@@ -10,9 +10,10 @@
 # History :
 #  - 0.1 - 15/05/2014 : Creation
 #  - 0.2 - 13/08/2014 : Generate parameter report
-#  - 0.3 - 19/07/2015 : 
+#  - 0.3 - 19/07/2015 : Added checks on instance and user databases
+#  - 0.4 - 22/07/2015 : Added SQL Agent job + Cluster infos
 #########################################################################################################
-$version = "0.3"
+$version = "0.4"
 Write-Host "Starting $($MyInvocation.MyCommand).Name v$version"
 $HMTL_title = "<h1>Report SQL Server parameters</h1>"
 $HMTL_title+= "`n<i>$($MyInvocation.MyCommand).Name v$version</i>`n"
@@ -157,6 +158,22 @@ foreach ($AnInstanceName in $Instances)
 		Add-Member -InputObject $check -Type NoteProperty -Name "Current value"		-Value $InstanceName
 		$instance_checks += $check
 		
+		Write-Host "`n> Check : FCInstance `t`t" -foreground Gray
+		$IsClustered = Select-Object -ExpandProperty IsClustered -InputObject $SQL_Instance -ErrorAction Stop
+		Write-Host "Instance Name : $IsClustered"
+		$check = New-Object -TypeName PSObject
+		Add-Member -InputObject $check -Type NoteProperty -Name "Checked element" 	-Value "IsClustered"
+		Add-Member -InputObject $check -Type NoteProperty -Name "Current value"		-Value $IsClustered
+		$instance_checks += $check
+		
+		Write-Host "`n> Check : AlwaysOn `t`t" -foreground Gray
+		$IsHadrEnabled = Select-Object -ExpandProperty IsHadrEnabled -InputObject $SQL_Instance -ErrorAction Stop
+		Write-Host "Instance Name : $IsHadrEnabled"
+		$check = New-Object -TypeName PSObject
+		Add-Member -InputObject $check -Type NoteProperty -Name "Checked element" 	-Value "IsHadrEnabled"
+		Add-Member -InputObject $check -Type NoteProperty -Name "Current value"		-Value $IsHadrEnabled
+		$instance_checks += $check
+		
 		Write-Host "`n> Check instance version `t`t" -NoNewLine -foreground Gray
 		$Version = $([String]$SQL_Instance.Version)
 		$VersionMajor = $([String]$($SQL_Instance.Version).Major)
@@ -230,7 +247,7 @@ foreach ($AnInstanceName in $Instances)
 		# Memory check
 		Write-Host "`n> Check SQL MaxMemory `t`t" -NoNewLine  -foreground Gray
 		$check = New-Object -TypeName PSObject
-		Add-Member -InputObject $check -Type NoteProperty -Name "Checked element" 	-Value "SQL Max Memory parameter"
+		Add-Member -InputObject $check -Type NoteProperty -Name "Checked element" 	-Value "SQL Max Memory parameter (MB)"
 		
 		$MaxMemory = $SQL_Instance.Configuration.MaxServerMemory.ConfigValue
         if($MaxMemory -eq 2147483647)
@@ -249,7 +266,7 @@ foreach ($AnInstanceName in $Instances)
 		$OSMemory = Select-Object -ExpandProperty PhysicalMemory -InputObject $SQL_Instance
 		Write-Host "OS memory : $OSMemory MB`t`t(should be >SQLMaxMemory = $MaxMemory MB)"		
 		$check = New-Object -TypeName PSObject
-		Add-Member -InputObject $check -Type NoteProperty -Name "Checked element" 	-Value "OS memory"
+		Add-Member -InputObject $check -Type NoteProperty -Name "Checked element" 	-Value "OS memory (MB)"
 		Add-Member -InputObject $check -Type NoteProperty -Name "Current value" 	-Value $OSMemory
 		$instance_checks += $check
 		
@@ -265,6 +282,39 @@ foreach ($AnInstanceName in $Instances)
 		$instance_checks += $check
 		
 		$HTML_instance += $instance_checks | Convertto-HTML -Fragment
+		
+		#MS Cluster checks
+		$HTML_cluster =""
+		if ($IsHadrEnabled -or $IsClustered){
+			Write-Host "`n> Check : Clustered `t`t" -foreground Gray
+			Import-Module failoverclusters
+			$ClusterName = Select-Object -ExpandProperty ClusterName -InputObject $SQL_Instance -ErrorAction Stop
+			$Cluster = Get-Cluster -name $ClusterName
+			$HTML_cluster ="`n<h3>OS Cluster configuration</h3>"
+			
+			#$cluster_checks = @()
+			#Write-Host "Cluster Name : $ClusterName"
+			#$check = New-Object -TypeName PSObject
+			#Add-Member -InputObject $check -Type NoteProperty -Name "Checked element" 	-Value "OS Cluster Name"
+			#Add-Member -InputObject $check -Type NoteProperty -Name "Current value"		-Value $ClusterName
+			#$cluster_checks += $check
+			#
+			#Write-Host "`n> Check : Quorum `t`t" -foreground Gray
+			#$ClusterName = Select-Object -ExpandProperty ClusterName -InputObject $SQL_Instance -ErrorAction Stop
+			#Write-Host "Cluster Name : $ClusterName"
+			#$check = New-Object -TypeName PSObject
+			#Add-Member -InputObject $check -Type NoteProperty -Name "Checked element" 	-Value "OS Cluster Name"
+			#Add-Member -InputObject $check -Type NoteProperty -Name "Current value"		-Value $ClusterName
+			#$cluster_checks += $check
+			#
+			#$HTML_cluster += $cluster_checks | Convertto-HTML -Fragment
+			
+			$HTML_cluster += Get-ClusterQuorum -cluster $Cluster | select Cluster,QuorumResource, QuorumType | Convertto-HTML -Fragment
+			
+			$HTML_cluster +="`n<h4>Cluster nodes</h4>"
+			$HTML_cluster += Get-ClusterNode -cluster $CLuster | select ID,NodeName,State,DrainStatus,NodeWeight,DynamicWeight | Convertto-HTML -Fragment
+			
+		}
 		
 		#Databases checks		
 		# model check
@@ -603,17 +653,17 @@ foreach ($AnInstanceName in $Instances)
 					Write-Host "NTFS cluster size (should be 64KB)"
 					Write-Host ""
 					
-					#Non-default parameters
-					$HTML_userdb += "`n<h5>Non default parameter</h5>"
-					$HTML_userdb += $userDB_specific_param | Sort-Object Database,Parameter | Convertto-HTML -Fragment
-					#File location
-					$HTML_userdb +="`n<h5>Storage specific</h5>"
-					$HTML_userdb += $user_checks | Convertto-HTML -Fragment
 					#HTML file block
 					$HTML_userdb += "`n<h5>Files: </h5><br/>`n<a id=`"user_Header_$InstanceName`" href=`"javascript:toggle2('userdb_param_$InstanceName','user_Header_$InstanceName');`" >Hide details</a>`n"
 					$HTML_userdb += "<div id=`"userdb_param_$InstanceName`" style=`"display: block;`">"
 					$HTML_userdb += $user_db | Convertto-HTML -Fragment -property "Name","Datafile","Logfile","Recovery Model","Last Full Backup","Last Log Backup"
 					$HTML_userdb +="`n</div>"
+					#File location
+					$HTML_userdb +="`n<h5>Storage specific</h5>"
+					$HTML_userdb += $user_checks | Convertto-HTML -Fragment
+					#Non-default parameters
+					$HTML_userdb += "`n<h5>Non default parameter</h5>"
+					$HTML_userdb += $userDB_specific_param | Sort-Object Database,Parameter | Convertto-HTML -Fragment
 				} else {
 					Write-Host "0 users' database available" -foreground red
 					$HTML_userdb +="`nThere is no available user database..."
@@ -622,9 +672,36 @@ foreach ($AnInstanceName in $Instances)
             Write-Host "0 users' database" -foreground red
 			$HTML_userdb +="`nThere is no user database..."
         }
-				
+		
+		# Jobs review
+        Write-Host "`n> Now checking SQL jobs" -foreground Gray
+		$HTML_sqlagent = "`n<h3>SQL Agent Jobs</h3>"
+		$jobs 		= @()
+		$jobs_steps	= @()
+		foreach($oneJob in $($SQL_Instance.JobServer).Jobs){
+			Write-Host "Job : $oneJob.Name"
+			$job_table = $oneJob | Select Name,IsEnabled,CurrentRunStatus,LastRunDate,LastRunOutcome,NextRunDate | Convertto-HTML -as list -fragment
+			$job_table[1]= $job_table[1] -replace 'td','th'
+			
+			$HTML_sqlagent += $job_table
+			$jobs_steps	= @()
+			foreach($oneStep in $($oneJob.jobSteps | Sort-Object ID)){
+				$step = New-Object -TypeName PSObject
+				Add-Member -InputObject $step -Type NoteProperty -Name "StepID" 			-Value $oneStep.ID
+				Add-Member -InputObject $step -Type NoteProperty -Name "StepName" 			-Value $oneStep.Name
+				Add-Member -InputObject $step -Type NoteProperty -Name "Command" 			-Value $oneStep.Command
+				Add-Member -InputObject $step -Type NoteProperty -Name "LastRunDate" 		-Value $oneStep.LastRunDate
+				Add-Member -InputObject $step -Type NoteProperty -Name "LastRunOutcome" 	-Value $oneStep.LastRunOutcome
+				$jobs_steps += $step
+			}
+			$HTML_sqlagent += "`n<a id=`"job_Header_$($oneJob.Name)`" href=`"javascript:toggle2('job_step_$($oneJob.Name)','job_Header_$($oneJob.Name)');`" >View details</a>`n"
+			$HTML_sqlagent += "<div id=`"job_step_$($oneJob.Name)`" style=`"display: none;`">"
+			$HTML_sqlagent += $jobs_steps | Convertto-HTML -Fragment
+			$HTML_sqlagent +="`n</div>"
+		}
+		
 		## Compose HTML portion for the instance :
-		$HMTL_instances += $HTML_connection + $HTML_instance + $HTML_farm + "`n<h3>Database parameters</h3>" + $HTML_userdb + $HTML_modeldb + $HTML_tempdb
+		$HMTL_instances += $HTML_connection + $HTML_instance + $HTML_cluster + $HTML_modeldb + $HTML_tempdb + "`n<h3>Database parameters</h3>" + $HTML_userdb + $HTML_sqlagent
 	}
 }
 $HTML_summary += "`n</ul>"
