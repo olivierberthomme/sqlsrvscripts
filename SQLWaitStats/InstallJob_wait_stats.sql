@@ -5,13 +5,14 @@
 /*                                           */
 /* History : Job creation                    */
 /*           Typo correction                 */
+/*           Added comments					 */
 /*********************************************/
 
 USE [msdb]
 GO
 
+/* Drop job if already exists */
 declare @exec_text VARCHAR(7000);
-
 set @exec_text = 
 	N'
 USE [msdb]
@@ -24,22 +25,22 @@ BEGIN
 		@job_name = N''msdb_wait_stats'' ;
 END;
 ';
-
 execute(@exec_text);
 
 
-/****** Object:  Job [msdb_wait_stats]    Script Date: 04/08/2014 16:03:05 ******/
+/* Create category_name */
 BEGIN TRANSACTION
 DECLARE @ReturnCode INT
 SELECT @ReturnCode = 0
-/****** Object:  JobCategory [[Uncategorized (Local)]]]    Script Date: 04/08/2014 16:03:05 ******/
-IF NOT EXISTS (SELECT name FROM msdb.dbo.syscategories WHERE name=N'[Uncategorized (Local)]' AND category_class=1)
+
+IF NOT EXISTS (SELECT name FROM msdb.dbo.syscategories WHERE name=N'[Performance audit]' AND category_class=1)
 BEGIN
-EXEC @ReturnCode = msdb.dbo.sp_add_category @class=N'JOB', @type=N'LOCAL', @name=N'[Uncategorized (Local)]'
+EXEC @ReturnCode = msdb.dbo.sp_add_category @class=N'JOB', @type=N'LOCAL', @name=N'[Performance audit]'
 IF (@@ERROR <> 0 OR @ReturnCode <> 0) GOTO QuitWithRollback
 
 END
 
+/* Job creation */
 DECLARE @jobId BINARY(16)
 EXEC @ReturnCode =  msdb.dbo.sp_add_job @job_name=N'msdb_wait_stats', 
 		@enabled=1, 
@@ -49,10 +50,11 @@ EXEC @ReturnCode =  msdb.dbo.sp_add_job @job_name=N'msdb_wait_stats',
 		@notify_level_page=0, 
 		@delete_level=0, 
 		@description=N'No description available.', 
-		@category_name=N'[Uncategorized (Local)]', 
+		@category_name=N'[Performance audit]', 
 		@owner_login_name=N'sa', @job_id = @jobId OUTPUT
 IF (@@ERROR <> 0 OR @ReturnCode <> 0) GOTO QuitWithRollback
-/****** Object:  Step [Gather wait_stats]    Script Date: 04/08/2014 16:03:06 ******/
+
+/* Unique step creation */
 EXEC @ReturnCode = msdb.dbo.sp_add_jobstep @job_id=@jobId, @step_name=N'Gather wait_stats', 
 		@step_id=1, 
 		@cmdexec_success_code=0, 

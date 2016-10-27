@@ -683,7 +683,9 @@ foreach ($AnInstanceName in $Instances)
 		$check = New-Object -TypeName PSObject
 		Add-Member -InputObject $check -Type NoteProperty -Name "Checked element" 	-Value "CPU number"
 		foreach($cpu in Get-WmiObject Win32_Processor -property NumberOfCores, NumberOfLogicalProcessors){
-			$cpuCount += $cpu.NumberOfCores * $cpu.NumberOfLogicalProcessors
+			# Debug 27.10.2016 
+			#$cpuCount += $cpu.NumberOfCores * $cpu.NumberOfLogicalProcessors
+			$cpuCount += $cpu.NumberOfLogicalProcessors
 		}
 		Add-Member -InputObject $check -Type NoteProperty -Name "Current value" 	-Value $cpuCount
 		switch ($farmSize) { 
