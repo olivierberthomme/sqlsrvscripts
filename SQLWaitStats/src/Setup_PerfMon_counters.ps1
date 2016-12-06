@@ -8,10 +8,10 @@
 #########################################################################################################
 # History :
 #  - 0.1 - 31/10/2016 : Creation
+#  - 0.2 - 06/12/2016 : Ask for MS SQL Instance destination
 
 ## Import functions
 $scriptPath = split-path -parent $MyInvocation.MyCommand.Definition
-. "$scriptPath\Functions_MSSQL.ps1"
 
 #Perfmon DataCollector Name
 $cntrname = "PerfMon_SQL_counters"
@@ -71,7 +71,6 @@ foreach ($AnInstanceName in $Instances)
 
 # Create the Perfmon DataCollector
 Write-Output "Metric listed into $pwd\$cntrname.txt"
-Write-Output "Metric statistics written into : [$AnInstanceName].[msdb]"
 $strCMD = "C:\Windows\System32\logman.exe create counter $cntrname -si 00:00:01 -cf $pwd\$cntrname.txt -f sql -v mmddhhmm -o $cntrname!log1 -rf 168:00:00"
 
 # Confirm before DataCollector creation
@@ -80,6 +79,23 @@ Write-Output " yes `n no`n(default:no)"
 $Ans = Read-Host 
 
 if ($Ans -eq "yes"){
+                                   # Select SQL Server instance destination
+                                   if ($Instances.count -gt 1){
+                                               $Ans = -1
+                                               $i = 0
+                                               while ($Ans -lt 0 -or $Ans -gt $($i-1)){
+                                               $i=0
+                                               Write-Output "Choose the instance hosting the metrics"
+                                               foreach ($AnInstanceName in $Instances)
+                                               { Write-Output "$($i): $AnInstanceName" ; $i++}
+                                               $Ans = Read-Host
+                                               }
+                                               $MSSQL_destination=$($Instances[$Ans])
+                                   }else{
+                                               $MSSQL_destination=$($Instances[0])
+                                   }
+                                   Write-Output "Metric statistics written into : [$($Instances[0])].[msdb]"
+                                   
             # Drop DataCollector if already exists
             try{
                         $DataCollectorSet = new-object -COM Pla.DataCollectorSet
@@ -95,27 +111,23 @@ if ($Ans -eq "yes"){
                         Write-Output "DataCollector cleanup"
             }
             
-            #Create the connection to database (store metric values)
-            if ($(Get-OdbcDsn | where {$_.name -eq $cntrname}).size -eq 0) {
-                        Add-OdbcDsn -Name $cntrname -DriverName "SQL Server" -DsnType "System" -SetPropertyValue @("Server=localhost\$AnInstanceName", "Trusted_Connection=Yes", "Database=msdb")
-            }
-            
-            # Create the DataCollector
-            #Write-Output $strCMD
-            Invoke-Expression $strCMD
-            
-            #Start the DataCollector
-            try{
-                        $DataCollectorSet = new-object -COM Pla.DataCollectorSet 
-                        $datacollectorset.Query($cntrname,"localhost")
-                        $datacollectorset.start($false)
-            }catch {
-                        Write-Output "DataCollector not started..."
-            }
+           #Create the connection to database (store metric values)
+           if ($(Get-OdbcDsn | where {$_.name -eq $cntrname}).size -eq 0) {
+                       Add-OdbcDsn -Name $cntrname -DriverName "SQL Server" -DsnType "System" -SetPropertyValue @("Server=localhost\$MSSQL_destination", "Trusted_Connection=Yes", "Database=msdb")
+           }
+           
+           # Create the DataCollector
+           #Write-Output $strCMD
+           Invoke-Expression $strCMD
+           
+           #Start the DataCollector
+           try{
+                       $DataCollectorSet = new-object -COM Pla.DataCollectorSet 
+                       $datacollectorset.Query($cntrname,"localhost")
+                       $datacollectorset.start($false)
+           }catch {
+                       Write-Output "DataCollector not started..."
+           }
 }
 
 exit 0
-
-*********************************************************************************************
-This email and any files transmitted with it, including replies and forwarded copies (which may contain alterations) subsequently transmitted from the Company, are confidential and solely for the use of the intended recipient. It may contain material protected by attorney-client privilege. The contents do not represent the opinion of Rolex SA except to the extent that it relates to their official business. If you are not the intended recipient or the person responsible for delivering to the intended recipient, be advised that you have received this email in error and that any use is strictly prohibited. If you are not the intended recipient, please advise the sender by return e-mail, then delete this message and any attachments. Rolex SA.
-*********************************************************************************************   
