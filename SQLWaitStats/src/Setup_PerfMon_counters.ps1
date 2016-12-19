@@ -9,6 +9,7 @@
 # History :
 #  - 0.1 - 31/10/2016 : Creation
 #  - 0.2 - 06/12/2016 : Ask for MS SQL Instance destination
+#  - 0.3 - 19/12/2016 : Changes on DSN creation
 
 ## Import functions
 $scriptPath = split-path -parent $MyInvocation.MyCommand.Definition
@@ -79,23 +80,23 @@ Write-Output " yes `n no`n(default:no)"
 $Ans = Read-Host 
 
 if ($Ans -eq "yes"){
-                                   # Select SQL Server instance destination
-                                   if ($Instances.count -gt 1){
-                                               $Ans = -1
-                                               $i = 0
-                                               while ($Ans -lt 0 -or $Ans -gt $($i-1)){
-                                               $i=0
-                                               Write-Output "Choose the instance hosting the metrics"
-                                               foreach ($AnInstanceName in $Instances)
-                                               { Write-Output "$($i): $AnInstanceName" ; $i++}
-                                               $Ans = Read-Host
-                                               }
-                                               $MSSQL_destination=$($Instances[$Ans])
-                                   }else{
-                                               $MSSQL_destination=$($Instances[0])
-                                   }
-                                   Write-Output "Metric statistics written into : [$($Instances[0])].[msdb]"
-                                   
+                    # Select SQL Server instance destination
+                    if ($Instances.count -gt 1){
+                           $Ans = -1
+                           $i = 0
+                           while ($Ans -lt 0 -or $Ans -gt $($i-1)){
+                           $i=0
+                           Write-Output "Choose the instance hosting the metrics"
+                           foreach ($AnInstanceName in $Instances)
+                           { Write-Output "$($i): $AnInstanceName" ; $i++}
+                           $Ans = Read-Host
+                           }
+                           $MSSQL_destination=$($Instances[$Ans])
+                    }else{
+                           $MSSQL_destination=$($Instances[0])
+                    }
+                    Write-Output "Metric statistics written into : [$($Instances[0])].[msdb]"
+                    
             # Drop DataCollector if already exists
             try{
                         $DataCollectorSet = new-object -COM Pla.DataCollectorSet
@@ -112,7 +113,9 @@ if ($Ans -eq "yes"){
             }
             
            #Create the connection to database (store metric values)
-           if ($(Get-OdbcDsn | where {$_.name -eq $cntrname}).size -eq 0) {
+           if ($(get-odbcdsn | where name -eq $cntrname) ){
+                       Write-Output "DSN already exists"
+           } else {
                        Add-OdbcDsn -Name $cntrname -DriverName "SQL Server" -DsnType "System" -SetPropertyValue @("Server=localhost\$MSSQL_destination", "Trusted_Connection=Yes", "Database=msdb")
            }
            
