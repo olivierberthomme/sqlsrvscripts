@@ -13,6 +13,10 @@
 
 ## Import functions
 $scriptPath = split-path -parent $MyInvocation.MyCommand.Definition
+if (-Not ([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole] "Administrator")){
+    Write-Output "Must execute script with Administrator rights"
+    exit -1
+}
 
 #Perfmon DataCollector Name
 $cntrname = "PerfMon_SQL_counters"
