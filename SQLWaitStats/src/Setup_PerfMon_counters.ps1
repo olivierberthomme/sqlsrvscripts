@@ -48,7 +48,7 @@ Set-Content $pwd\$cntrname.txt $OS_Counters
 foreach ($AnInstanceName in $Instances)
 {
             $SQL_Counters = "
-\MSSQL`$<INSTANCE>:Access Methods\Full Scans/sec 
+\MSSQL`$<INSTANCE>:Access Methods\Full Scans/sec
 \MSSQL`$<INSTANCE>:Access Methods\Index Searches/sec
 \MSSQL`$<INSTANCE>:Access Methods\Page Splits/sec
 \MSSQL`$<INSTANCE>:Locks\Lock Requests/sec
@@ -80,8 +80,8 @@ $strCMD = "C:\Windows\System32\logman.exe create counter $cntrname -si 00:00:01 
 
 # Confirm before DataCollector creation
 Write-Output "Proceed ?"
-Write-Output " yes `n no`n(default:no)" 
-$Ans = Read-Host 
+Write-Output " yes `n no`n(default:no)"
+$Ans = Read-Host
 
 if ($Ans -eq "yes"){
                     # Select SQL Server instance destination
@@ -100,7 +100,7 @@ if ($Ans -eq "yes"){
                            $MSSQL_destination=$($Instances[0])
                     }
                     Write-Output "Metric statistics written into : [$($Instances[0])].[msdb]"
-                    
+
             # Drop DataCollector if already exists
             try{
                         $DataCollectorSet = new-object -COM Pla.DataCollectorSet
@@ -115,21 +115,25 @@ if ($Ans -eq "yes"){
             } catch {
                         Write-Output "DataCollector cleanup"
             }
-            
+
            #Create the connection to database (store metric values)
            if ($(get-odbcdsn | where name -eq $cntrname) ){
                        Write-Output "DSN already exists"
            } else {
-                       Add-OdbcDsn -Name $cntrname -DriverName "SQL Server" -DsnType "System" -SetPropertyValue @("Server=localhost\$MSSQL_destination", "Trusted_Connection=Yes", "Database=msdb")
+                if($MSSQL_destination -eq "MSSQLSERVER"){
+                      Add-OdbcDsn -Name $cntrname -DriverName "SQL Server" -DsnType "System" -SetPropertyValue @("Server=localhost", "Trusted_Connection=Yes", "Database=msdb")
+                }else{
+                      Add-OdbcDsn -Name $cntrname -DriverName "SQL Server" -DsnType "System" -SetPropertyValue @("Server=localhost\$MSSQL_destination", "Trusted_Connection=Yes", "Database=msdb")
+                }
            }
-           
+
            # Create the DataCollector
            #Write-Output $strCMD
            Invoke-Expression $strCMD
-           
+
            #Start the DataCollector
            try{
-                       $DataCollectorSet = new-object -COM Pla.DataCollectorSet 
+                       $DataCollectorSet = new-object -COM Pla.DataCollectorSet
                        $datacollectorset.Query($cntrname,"localhost")
                        $datacollectorset.start($false)
            }catch {
