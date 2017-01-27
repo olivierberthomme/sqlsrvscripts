@@ -41,6 +41,9 @@ $OS_Counters = "
 \Processor(_Total)\% Processor Time
 \Processor(_Total)\Interrupts/sec
 \System\Processor Queue Length
+
+\Network Interface(*)\Bytes Received/sec
+\Network Interface(*)\Bytes Sent/sec
 "
 Set-Content $pwd\$cntrname.txt $OS_Counters
 

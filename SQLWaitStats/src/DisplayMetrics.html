@@ -5,6 +5,7 @@
 History :
 - 2017-01-14: OBE - First version with JSON navigation
 - 2017-01-26: OBE - Selectable time slot
+- 2017-01-27: OBE - Added legends
 
  -->
 <meta charset=utf-8>
@@ -53,65 +54,73 @@ this._y1=this._y2,this._y2=n}};var Gb=function t(n){function e(t){return n?new m
 //=======================================================================//
 
 var navigationString = '                                                                                                                                         \
-{   "datasources": [                                                                                                                                             \
-    {   "name": "SQLWaits",                                                                                                                                      \
-        "SQL": "SELECT \'2017-01-10 12:00:00\' as CounterDateTime,\'False counter\' as CounterName, 100 as avg_value"                                            \
-    },                                                                                                                                                           \
-    {   "name": "Perfmon",                                                                                                                                       \
-        "SQL": "with countervalues as (SELECT ce.objectname,ce.countername,cd.countervalue,NTILE(10) OVER(ORDER BY cd.[CounterDateTime]) as decile, [CounterDateTime] from msdb.dbo.counterdata cd inner join msdb.dbo.counterdetails ce on cd.counterid=ce.counterid where cd.counterdatetime>$varDebut and cd.counterdatetime<=$varFin) SELECT CONVERT(VARCHAR(19),max([CounterDateTime]),120) as CounterDateTime,objectname+\' \'+countername as CounterName,avg(countervalue) as avg_value from countervalues group by objectname+\' \'+countername,decile order by 1,2"\
-    },                                                                                                                                                           \
-    {   "name": "Context",                                                                                                                                       \
-        "SQL": "with countervalues as (SELECT ce.objectname,ce.countername,cd.countervalue,NTILE(10) OVER(ORDER BY cd.CounterDateTime) as decile, CounterDateTime from msdb.dbo.counterdata cd inner join msdb.dbo.counterdetails ce on cd.counterid=ce.counterid where countername=\'% Processor Time\') SELECT CONVERT(VARCHAR(19),max([CounterDateTime]),120) as CounterDateTime,objectname,countername,avg(countervalue) as avg_value from countervalues group by objectname,countername,decile order by 1,2,3" \
-    }                                                                                                                                                            \
-    ],                                                                                                                                                           \
-    "navigation":[                                                                                                                                               \
-    {   "page": "overview",                                                                                                                                      \
-        "prefix": "ov",                                                                                                                                          \
-        "graphs": [                                                                                                                                              \
-        {   "div": "ov_SQLWaits",                                                                                                                                \
-            "type": "bar",                                                                                                                                       \
-            "dataSource": "Perfmon",                                                                                                                             \
-            "metrics": ["Network Interface Bytes Received/sec","Network Interface Bytes Sent/sec","Network Interface Packets Received/sec", "Network Interface Packets Sent/sec"]                                                                                                           \
-        },                                                                                                                                                       \
-        {   "div": "ov_CPU",                                                                                                                                     \
-            "type": "bar",                                                                                                                                       \
-            "dataSource": "Perfmon",                                                                                                                             \
-            "metrics": ["Processor % Processor Time","Processor % Privileged Time"]                                                                              \
-        }                                                                                                                                                        \
-        ]                                                                                                                                                        \
-    },                                                                                                                                                           \
-    {   "page": "cpu",                                                                                                                                           \
-        "prefix": "cpu",                                                                                                                                         \
-        "graphs": [                                                                                                                                              \
-        {   "div": "cpu_OS",                                                                                                                                     \
-            "type": "bar",                                                                                                                                       \
-            "dataSource": "Perfmon",                                                                                                                             \
-            "metrics": "\\\\Processor(_Total)\\\\% Processor Time, \\\\Processor(_Total)\\\\% Privileged Time"                                                   \
-        },                                                                                                                                                       \
-        {   "div": "cpu_batches",                                                                                                                                \
-            "type": "bar",                                                                                                                                       \
-            "dataSource": "Perfmon",                                                                                                                             \
-            "metrics": "SQL Statistics\\\\Batch Requests/sec, SQL Statistics\\\\SQL Compilations/sec, SQL Statistics\\\\SQL Re-Compilations/sec"                 \
-        },                                                                                                                                                       \
-        {   "div": "cpu_sessions",                                                                                                                               \
-            "type": "bar",                                                                                                                                       \
-            "dataSource": "Perfmon",                                                                                                                             \
-            "metrics": "Databases(*)\\\\Transactions/sec,General Statistics\\\\Logins/sec"                                                                 	     \
-        }                                                                                                                                                        \
-        ]                                                                                                                                                        \
-    }                                                                                                                                                            \
-    ]                                                                                                                                                            \
-}                                                                                                                                                                \
+{   "datasources": [                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                \
+    {   "name": "SQLWaits",                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         \
+        "SQL": "SELECT \'2017-01-10 12:00:00\' as CounterDateTime,\'False counter\' as CounterName, 100 as avg_value"                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               \
+    },                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              \
+    {   "name": "Perfmon",                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          \
+        "SQL": "with countervalues as (SELECT ce.objectname,ce.countername,ce.instancename,cd.countervalue,NTILE(10) OVER(ORDER BY cd.[CounterDateTime]) as decile, [CounterDateTime] from msdb.dbo.counterdata cd inner join msdb.dbo.counterdetails ce on cd.counterid=ce.counterid where cd.counterdatetime>$varDebut and cd.counterdatetime<=$varFin) SELECT CONVERT(VARCHAR(19),max([CounterDateTime]),120) as CounterDateTime,objectname+ISNULL(\' \'+countername+ISNULL(\' \'+instancename,\'\'),\'\') as CounterName,avg(countervalue) as avg_value from countervalues group by objectname+ISNULL(\' \'+countername+ISNULL(\' \'+instancename,\'\'),\'\'),decile order by 1,2"  \
+    },                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              \
+    {   "name": "Context",                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          \
+        "SQL": "with countervalues as (SELECT ce.objectname,ce.countername,ce.instancename,cd.countervalue,NTILE(10) OVER(ORDER BY cd.CounterDateTime) as decile, CounterDateTime from msdb.dbo.counterdata cd inner join msdb.dbo.counterdetails ce on cd.counterid=ce.counterid where countername=\'% Processor Time\') SELECT CONVERT(VARCHAR(19),max([CounterDateTime]),120) as CounterDateTime,objectname+ISNULL(\' \'+countername+ISNULL(\' \'+instancename,\'\'),\'\') as CounterName,avg(countervalue) as avg_value from countervalues group by objectname+ISNULL(\' \'+countername+ISNULL(\' \'+instancename,\'\'),\'\'),decile order by 1,2,3"                                                                                                                 \
+    }                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               \
+    ],                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              \
+    "navigation":[                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  \
+    {   "page": "overview",                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         \
+        "prefix": "ov",                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             \
+        "graphs": [                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 \
+        {   "div": "ov_CPU",                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        \
+            "type": "bar",                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          \
+            "dataSource": "Perfmon",                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                \
+            "metrics": ["Processor % Processor Time","Processor % Privileged Time"]                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 \
+        },                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          \
+        {   "div": "ov_Disk",                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       \
+            "type": "bar",                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          \
+            "dataSource": "Perfmon",                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                \
+            "metrics": ["PhysicalDisk % Disk Time"]                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 \
+        },                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          \
+        {   "div": "ov_Memory",                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     \
+            "type": "bar",                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          \
+            "dataSource": "Perfmon",                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                \
+            "metrics": ["Memory Free & Zero Page List Bytes","Memory Modified Page List Bytes","Memory Standby Cache Normal Priority Bytes"]                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                \
+        }                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           \
+        ]                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           \
+    },                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              \
+    {   "page": "cpu",                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              \
+        "prefix": "cpu",                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            \
+        "graphs": [                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 \
+        {   "div": "cpu_OS",                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        \
+            "type": "bar",                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          \
+            "dataSource": "Perfmon",                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                \
+            "metrics": "\\\\Processor(_Total)\\\\% Processor Time, \\\\Processor(_Total)\\\\% Privileged Time"                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      \
+        },                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          \
+        {   "div": "cpu_batches",                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   \
+            "type": "bar",                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          \
+            "dataSource": "Perfmon",                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                \
+            "metrics": "SQL Statistics\\\\Batch Requests/sec, SQL Statistics\\\\SQL Compilations/sec, SQL Statistics\\\\SQL Re-Compilations/sec"                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    \
+        },                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          \
+        {   "div": "cpu_sessions",                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  \
+            "type": "bar",                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          \
+            "dataSource": "Perfmon",                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                \
+            "metrics": "Databases(*)\\\\Transactions/sec,General Statistics\\\\Logins/sec"                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          \
+        }                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           \
+        ]                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           \
+    }                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               \
+    ]                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               \
+}                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   \
 ';
+// Date parsing global variables
 var parseStr_to_Date = d3.timeParse("%Y-%m-%d %H:%M:%S");
 var formatDate_to_Str = d3.timeFormat("%Y-%m-%d %H:%M:%S");
 
 var json = JSON.parse(navigationString);
 var connection;
-var margin = {top: 20, right: 20, bottom: 30, left: 30},
-    context_width = 900 - margin.left - margin.right,
+var datasources = new Object();
+// Display global variables
+var margin = {top: 20, right: 20, bottom: 30, left: 100},
+    context_width = 1200 - margin.left - margin.right,
     context_height = 180 - margin.top - margin.bottom,
-	focus_width = 900 - margin.left - margin.right,
+	focus_width = 1200 - margin.left - margin.right,
     focus_height = 180 - margin.top - margin.bottom;
 var x_context;
 var x_context_selected;
@@ -145,6 +154,30 @@ function ExecuteSQL(SQLQuery){
 	var rs = new ActiveXObject("ADODB.Recordset");
 	rs.Open(SQLQuery, connection);
 	return rs;
+}
+
+// Function to get all results from datasources (parameters : datasource_Name=String, start=Date, end=Date)
+function RefreshDatasourceWithStartEndTime(datasource_name,startTime,endTime){
+	// Get the graph query
+	var Query = jsonPath(json,"$.datasources[?(@.name=='"+datasource_name+"')].SQL").toString();
+	//document.write(x_context_selected);
+	Query = Query.replace("$varDebut","'"+formatDate_to_Str(startTime)+"'").replace("$varFin","'"+formatDate_to_Str(endTime)+"'");
+	var resultSet = ExecuteSQL(Query);
+	
+	datasources[datasource_name] = [];
+	if (!resultSet.eof){
+		resultSet.MoveFirst;
+	}
+	while(!resultSet.eof){
+		var new_line = {};
+		new_line['CounterDateTime'] = parseStr_to_Date(resultSet("CounterDateTime").value);
+		new_line['counterName'] = (resultSet("CounterName").value);
+		new_line['avg_value'] = (resultSet("avg_value").value);
+		
+		datasources[datasource_name].push(new_line);
+	    resultSet.movenext;
+	}
+	resultSet.close;
 }
 
 // Function to draw context graph (top page graph)
@@ -212,7 +245,7 @@ function UpdateContextGraph(){
 	d3.select("h3").remove();
 	d3.select("body").select("#focus")
 		.insert("h3",":first-child")
-		.html("Start interval:"+formatDate_to_Str(x_context_selected.domain()[0])+" - end interval:"+formatDate_to_Str(x_context_selected.domain()[1]));
+		.html("Start interval:"+formatDate_to_Str(x_context_selected.domain()[0])+" - End interval:"+formatDate_to_Str(x_context_selected.domain()[1]));
 }
 
 // Function triggered on select on context graph
@@ -222,7 +255,6 @@ function brushended(){
 		 // Empty selections = All range
 		x_context_selected = x_context.copy();
 	}else{
-		//x_context_selected.domain(d3.event.selection.map(x_context.invert));
 		x_context_selected.domain(d3.event.selection.map(x_context.invert));
 	}
 	
@@ -230,7 +262,7 @@ function brushended(){
 	d3.select("h3").remove();
 	d3.select("body").select("#focus")
 		.insert("h3",":first-child")
-		.html("Start interval:"+formatDate_to_Str(x_context_selected.domain()[0])+" - end interval:"+formatDate_to_Str(x_context_selected.domain()[1]));
+		.html("Start interval:"+formatDate_to_Str(x_context_selected.domain()[0])+" - End interval:"+formatDate_to_Str(x_context_selected.domain()[1]));
 
 	UpdateFocusGraphs();
 }
@@ -239,7 +271,7 @@ function brushended(){
 function DrawGraph(graph){
 	// Get the graph query
 	var Query = jsonPath(json,"$.datasources[?(@.name=='"+graph.dataSource+"')].SQL").toString();
-	//document.write(x_context_selected);
+	
 	Query = Query.replace("$varDebut","'"+formatDate_to_Str(x_context_selected.domain()[0])+"'").replace("$varFin","'"+formatDate_to_Str(x_context_selected.domain()[1])+"'");
 	var rs_one_focus_graph = ExecuteSQL(Query);
 	
@@ -249,16 +281,29 @@ function DrawGraph(graph){
 		rs_one_focus_graph.MoveFirst;
 	}
 	while(!rs_one_focus_graph.eof){
-		if(graph.metrics.indexOf(rs_one_focus_graph("CounterName").value) > -1){
-	        	var new_line = {};
-	        	new_line['CounterDateTime'] = parseStr_to_Date(rs_one_focus_graph("CounterDateTime").value);
-	        	new_line['counterName'] = (rs_one_focus_graph("CounterName").value);
-	        	new_line['avg_value'] = (rs_one_focus_graph("avg_value").value);
-	        	focus_data_array.push(new_line);
-                }	
-	        rs_one_focus_graph.movenext;
+		graph.metrics.forEach(function(entry){
+			//if(graph.metrics.indexOf(rs_one_focus_graph("CounterName").value) > -1){
+			if(rs_one_focus_graph("CounterName").value.indexOf(entry) !== -1){
+				var new_line = {};
+				new_line['CounterDateTime'] = parseStr_to_Date(rs_one_focus_graph("CounterDateTime").value);
+				new_line['counterName'] = (rs_one_focus_graph("CounterName").value);
+				new_line['avg_value'] = (rs_one_focus_graph("avg_value").value);
+				focus_data_array.push(new_line);
+				}
+		}
+		);
+		rs_one_focus_graph.movenext;
 	}
 	rs_one_focus_graph.close;
+	
+	var graph_datasource = {};
+	graph.metrics.forEach(function(oneMetric){
+		graph_datasource.push(
+			datasources[graph.dataSource].filter(function(oneDS_row){
+				return oneDS_row["counterName"].indexOf(oneMetric) !== -1;
+				})
+			);
+	});
 	
 	// Draw one focus graph
 		d3.select("#"+graph.div).selectAll("*").remove();
@@ -278,6 +323,10 @@ function DrawGraph(graph){
 		x_focus.domain(d3.extent(focus_data_array, function(d) { return d.CounterDateTime; }));
 		y_focus.domain([0, d3.max(focus_data_array, function(d) { return d.avg_value; })]);
 		
+		// Legend
+		var legend = focus.append("g")
+			.attr("class", "legend");
+		
 		// Prepare the function to get 1 metric value
 		var focus_metric_line = d3.line()
 		    .x(function(d) { return x_focus(d.CounterDateTime); })
@@ -291,18 +340,28 @@ function DrawGraph(graph){
 		// Loop through each counterName
 		dataByCounterName.forEach(function(d,i) {
 		        focus.append("path")
-            			.attr("class", "line")
-				.style("stroke", colors(i))
+            		.attr("class", "line")
+					.style("stroke", colors(i))
+					.attr("data-legend",d.key)
 			        .attr("d", focus_metric_line(d.values)); 
+					
+				legend.append("text")
+				    .style("font", "14px open-sans")
+				    .attr("x", 10)
+				    .attr("y", 10+i*20)
+				    .attr("dy", ".35em")
+					.style("fill",colors(i))
+				    //.style("text-anchor", "end")
+				    .text(d.key);
 		});
 
 		focus.append("g")
-		  .attr("class", "x axis")
-		  .attr("transform", "translate(0," + focus_height + ")")
-		  .call(d3.axisBottom(x_focus));
+			.attr("class", "x axis")
+			.attr("transform", "translate(0," + focus_height + ")")
+			.call(d3.axisBottom(x_focus));
 		focus.append("g")
-		  .attr("class", "y axis")
-		  .call(d3.axisLeft(y_focus));
+			.attr("class", "y axis")
+			.call(d3.axisLeft(y_focus));
 	// End draw the focus graph
 	
 }
@@ -333,6 +392,8 @@ function PrepareFocusedGraphs(){
 				.append("svg")
 				.attr("id",graphs[i].div)
 					.text(graphs[i].dataSource);
+					
+		RefreshDatasourceWithStartEndTime("Perfmon",x_context_selected.domain()[0],x_context_selected.domain()[1]);
 		DrawGraph(graphs[i]);
 	}
 	
