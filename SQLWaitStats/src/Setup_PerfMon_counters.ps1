@@ -10,6 +10,7 @@
 #  - 0.1 - 31/10/2016 : Creation
 #  - 0.2 - 06/12/2016 : Ask for MS SQL Instance destination
 #  - 0.3 - 19/12/2016 : Changes on DSN creation
+#  - 0.4 - 05/02/2017 : Add display on collected metrics + Change collect frequency to 15s + Debug for standard instance
 
 ## Import functions
 $scriptPath = split-path -parent $MyInvocation.MyCommand.Definition
@@ -50,36 +51,41 @@ Set-Content $pwd\$cntrname.txt $OS_Counters
 ## Loop on all SQL instances
 foreach ($AnInstanceName in $Instances)
 {
-            $SQL_Counters = "
-\MSSQL`$<INSTANCE>:Access Methods\Full Scans/sec
-\MSSQL`$<INSTANCE>:Access Methods\Index Searches/sec
-\MSSQL`$<INSTANCE>:Access Methods\Page Splits/sec
-\MSSQL`$<INSTANCE>:Locks\Lock Requests/sec
-\MSSQL`$<INSTANCE>:Locks\Lock Waits/sec
+            if ($($AnInstanceName).ToString() -eq "MSSQLSERVER"){
+                        $AnInstanceName="SQLServer"
+            }else{
+                        $AnInstanceName="MSSQL`$"+$AnInstanceName
+            }
+    $SQL_Counters = "
+\<INSTANCE>:Access Methods\Full Scans/sec
+\<INSTANCE>:Access Methods\Index Searches/sec
+\<INSTANCE>:Access Methods\Page Splits/sec
+\<INSTANCE>:Locks\Lock Requests/sec
+\<INSTANCE>:Locks\Lock Waits/sec
 
-\MSSQL`$<INSTANCE>:Buffer Manager\Page life expectancy
-\MSSQL`$<INSTANCE>:Buffer Manager\Buffer cache hit ratio
-\MSSQL`$<INSTANCE>:Buffer Manager\Page lookups/sec
+\<INSTANCE>:Buffer Manager\Page life expectancy
+\<INSTANCE>:Buffer Manager\Buffer cache hit ratio
+\<INSTANCE>:Buffer Manager\Page lookups/sec
 
-\MSSQL`$<INSTANCE>:Databases(*)\Transactions/sec
-\MSSQL`$<INSTANCE>:General Statistics\Logins/sec
-\MSSQL`$<INSTANCE>:General Statistics\Active Temp Tables
+\<INSTANCE>:Databases(*)\Transactions/sec
+\<INSTANCE>:General Statistics\Logins/sec
+\<INSTANCE>:General Statistics\Active Temp Tables
 
-\MSSQL`$<INSTANCE>:Memory Manager\Memory Grants Pending
-\MSSQL`$<INSTANCE>:Memory Manager\SQL Cache Memory (KB)
-\MSSQL`$<INSTANCE>:Memory Manager\Free Memory (KB)
-\MSSQL`$<INSTANCE>:Memory Manager\Target Server Memory (KB)
-\MSSQL`$<INSTANCE>:Memory Manager\Total Server Memory (KB)
+\<INSTANCE>:Memory Manager\Memory Grants Pending
+\<INSTANCE>:Memory Manager\SQL Cache Memory (KB)
+\<INSTANCE>:Memory Manager\Free Memory (KB)
+\<INSTANCE>:Memory Manager\Target Server Memory (KB)
+\<INSTANCE>:Memory Manager\Total Server Memory (KB)
 
-\MSSQL`$<INSTANCE>:SQL Statistics\Batch Requests/sec
-\MSSQL`$<INSTANCE>:SQL Statistics\SQL Compilations/sec
-\MSSQL`$<INSTANCE>:SQL Statistics\SQL Re-Compilations/sec"
+\<INSTANCE>:SQL Statistics\Batch Requests/sec
+\<INSTANCE>:SQL Statistics\SQL Compilations/sec
+\<INSTANCE>:SQL Statistics\SQL Re-Compilations/sec"
             $SQL_Counters | % {$_ -replace "<INSTANCE>", $AnInstanceName} | Add-Content $pwd\$cntrname.txt
 }
 
 # Create the Perfmon DataCollector
 Write-Output "Metric listed into $pwd\$cntrname.txt"
-$strCMD = "C:\Windows\System32\logman.exe create counter $cntrname -si 00:00:01 -cf $pwd\$cntrname.txt -f sql -v mmddhhmm -o $cntrname!log1 -rf 168:00:00"
+$strCMD = "C:\Windows\System32\logman.exe create counter $cntrname -si 00:00:15 -cf $pwd\$cntrname.txt -f sql -v mmddhhmm -o $cntrname!log1 -rf 168:00:00"
 
 # Confirm before DataCollector creation
 Write-Output "Proceed ?"
@@ -87,36 +93,35 @@ Write-Output " yes `n no`n(default:no)"
 $Ans = Read-Host
 
 if ($Ans -eq "yes"){
-                    # Select SQL Server instance destination
-                    if ($Instances.count -gt 1){
-                           $Ans = -1
-                           $i = 0
-                           while ($Ans -lt 0 -or $Ans -gt $($i-1)){
-                           $i=0
-                           Write-Output "Choose the instance hosting the metrics"
-                           foreach ($AnInstanceName in $Instances)
-                           { Write-Output "$($i): $AnInstanceName" ; $i++}
-                           $Ans = Read-Host
-                           }
-                           $MSSQL_destination=$($Instances[$Ans])
-                    }else{
-                           $MSSQL_destination=$($Instances[0])
-                    }
-                    Write-Output "Metric statistics written into : [$($Instances[0])].[msdb]"
+                                   $MSSQL_destination = $($Instances[0])
+                                   # Select SQL Server instance destination
+                                   if ($Instances.count -gt 1){
+                                                  $Ans = -1
+                                                  $i = 0
+                                                  while ($Ans -lt 0 -or $Ans -gt $($i-1)){
+                                                  $i=0
+                                                  Write-Output "Choose the instance hosting the metrics"
+                                                  foreach ($AnInstanceName in $Instances)
+                                                  { Write-Output "$($i): $AnInstanceName" ; $i++}
+                                                  $Ans = Read-Host
+                                                  }
+                                                  $MSSQL_destination=$($Instances[$Ans])
+                                   }else{
+                                                  $MSSQL_destination=$($Instances[0])
+                                   }
+                                   Write-Output "Metric statistics written into : [$MSSQL_destination].[msdb]"
 
             # Drop DataCollector if already exists
             try{
                         $DataCollectorSet = new-object -COM Pla.DataCollectorSet
-                        Write-Output $DataCollectorSet.Query($cntrname,"localhost")
-                        while ($($datacollectorset.Query($cntrname,"localhost")).name -eq $cntrname){
-                                   $datacollectorset.stop($false)
-                                   Write-Output "stop"
-                                   $datacollectorset.delete()
-                                   Write-Output "delete"
-                                   Start-Sleep -s 2
-                        }
+                        $($datacollectorset.Query($cntrname,$null))
+                        $datacollectorset.stop($false)
+                        Write-Output "Stop DataCollectorSet"
+                        $datacollectorset.delete()
+                        Write-Output "Delete DataCollectorSet"
+                        Start-Sleep -s 2
             } catch {
-                        Write-Output "DataCollector cleanup"
+                        Write-Output "DataCollector cleanup not done !"
             }
 
            #Create the connection to database (store metric values)
@@ -137,11 +142,21 @@ if ($Ans -eq "yes"){
            #Start the DataCollector
            try{
                        $DataCollectorSet = new-object -COM Pla.DataCollectorSet
-                       $datacollectorset.Query($cntrname,"localhost")
+                       $datacollectorset.Query($cntrname,$null)
                        $datacollectorset.start($false)
+                                                              Write-Output "DataCollector started..."
            }catch {
                        Write-Output "DataCollector not started..."
            }
+                           Write-Output "Wait a little then check the saved metric values in SQL Server..."
+                           Start-Sleep -s 30
+
+                           # Display metrics collected
+                           if($MSSQL_destination -eq "MSSQLSERVER"){
+                Invoke-Sqlcmd -Query "SELECT DISTINCT [ObjectName]+' '+ISNULL([CounterName],'')+' '+ISNULL([InstanceName],'') as CounterName FROM [msdb].[dbo].[CounterDetails] order by 1;" -ServerInstance "localhost"
+                           }else{
+                                               Invoke-Sqlcmd -Query "SELECT DISTINCT [ObjectName]+' '+ISNULL([CounterName],'')+' '+ISNULL([InstanceName],'') as CounterName FROM [msdb].[dbo].[CounterDetails] order by 1;" -ServerInstance "localhost\$MSSQL_destination"
+                           }
 }
 
 exit 0
