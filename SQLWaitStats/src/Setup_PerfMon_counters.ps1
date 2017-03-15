@@ -109,7 +109,7 @@ if ($Ans -eq "yes"){
                                    }else{
                                                   $MSSQL_destination=$($Instances[0])
                                    }
-                                   Write-Output "Metric statistics written into : [$MSSQL_destination].[msdb]"
+                                   Write-Output "Metric statistics destination : [$MSSQL_destination].[msdb]"
 
             # Drop DataCollector if already exists
             try{
@@ -148,7 +148,7 @@ if ($Ans -eq "yes"){
            }catch {
                        Write-Output "DataCollector not started..."
            }
-                           Write-Output "Wait a little then check the saved metric values in SQL Server..."
+                           Write-Output "Wait a little then check the saved metrics from SQL Server..."
                            Start-Sleep -s 30
 
                            # Display metrics collected
