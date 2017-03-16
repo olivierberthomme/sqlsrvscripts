@@ -18,6 +18,7 @@
 #  - 1.0  - 27/05/2016 : Usual workload
 #  - 1.0b - 13/06/2016 : Usual workload implemented
 #  - 1.1  - 14/07/2016 : Parameters are now interactive if missing (AMA request)
+#  - 1.1  - 16/03/2016 : Update on parameters for LogWriter
 #########################################################################################################
 Param(
     [Parameter(Mandatory = $true, HelpMessage="Data drive (default C:)")]
@@ -315,10 +316,10 @@ benchmark $DLW_param ([ref]$Data_RunDetails) ([ref]$dataDLW_latency) ([ref]$data
 Remove-Item $TestFilePath
 
 # Simulate Log write :
-$outstandings = 32		# max 116 outstandings
+$outstandings = 4		# max 116 outstandings
 $threads = 1 			# Equal number of NUMA nodes (and max 4)
 $TestFilePath = "$Log_drive\diskspd_tmp.dat"
-$LRW_param = "-c$($file_size)G -d$duration_run -w100 -b64K -Sh -W -o$outstandings -t$threads -L $TestFilePath".Split()
+$LRW_param = "-c$($file_size)G -d$duration_run -w100 -b8K -Sh -W -o$outstandings -t$threads -L $TestFilePath".Split()
 $FuncLRW_param = "Function Log Writer parameters : $LRW_param"
 benchmark $LRW_param ([ref]$Data_RunDetails) ([ref]$dataLWR_latency) ([ref]$dataLWR_iops) ([ref]$dataLWR_cores) "Log Writer"
 Remove-Item $TestFilePath
