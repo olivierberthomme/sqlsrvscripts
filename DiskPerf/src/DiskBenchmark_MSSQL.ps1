@@ -18,7 +18,7 @@
 #  - 1.0  - 27/05/2016 : Usual workload
 #  - 1.0b - 13/06/2016 : Usual workload implemented
 #  - 1.1  - 14/07/2016 : Parameters are now interactive if missing (AMA request)
-#  - 1.1  - 16/03/2016 : Update on parameters for LogWriter
+#  - 1.2  - 16/03/2016 : Update on parameters for LogWriter
 #########################################################################################################
 Param(
     [Parameter(Mandatory = $true, HelpMessage="Data drive (default C:)")]
@@ -45,7 +45,7 @@ if (! $Duration) 				{ $Duration=5 }
 if (! $File_size) 				{ $File_size=5 }
 
 $scriptPath = split-path -parent $MyInvocation.MyCommand.Definition
-$version = "1.1"
+$version = "1.2"
 
 function generate_CSV{
 	# Make a copy of previous file
