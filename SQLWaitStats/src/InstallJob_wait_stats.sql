@@ -7,6 +7,7 @@
 /*           Typo correction                 */
 /*           Added comments                  */
 /*           GROUP BY added while insert     */
+/*           Case sensitive compliant		 */
 /*********************************************/
 
 USE [msdb]
@@ -148,14 +149,14 @@ WITH [Waits] AS
 [wait_statistics] as
     (SELECT
         [W1].[wait_type] AS [WaitType],
-        CAST ([W1].[WaitS] AS DECIMAL (16, 2)) AS [Wait_S],
-        CAST ([W1].[ResourceS] AS DECIMAL (16, 2)) AS [Resource_S],
-        CAST ([W1].[SignalS] AS DECIMAL (16, 2)) AS [Signal_S],
-        [W1].[WaitCount] AS [WaitCount],
-        CAST ([W1].[Percentage] AS DECIMAL (5, 2)) AS [Percentage],
-        CAST (([W1].[WaitS] / [W1].[WaitCount]) AS DECIMAL (16, 4)) AS [AvgWait_S],
-        CAST (([W1].[ResourceS] / [W1].[WaitCount]) AS DECIMAL (16, 4)) AS [AvgRes_S],
-        CAST (([W1].[SignalS] / [W1].[WaitCount]) AS DECIMAL (16, 4)) AS [AvgSig_S]
+        CAST ([W1].[WaitS] AS DECIMAL (16, 2)) AS [wait_s],
+        CAST ([W1].[ResourceS] AS DECIMAL (16, 2)) AS [resource_s],
+        CAST ([W1].[SignalS] AS DECIMAL (16, 2)) AS [signal_s],
+        [W1].[WaitCount] AS [waitcount],
+        CAST ([W1].[Percentage] AS DECIMAL (5, 2)) AS [percentage],
+        CAST (([W1].[WaitS] / [W1].[WaitCount]) AS DECIMAL (16, 4)) AS [avgwait_s],
+        CAST (([W1].[ResourceS] / [W1].[WaitCount]) AS DECIMAL (16, 4)) AS [avgres_s],
+        CAST (([W1].[SignalS] / [W1].[WaitCount]) AS DECIMAL (16, 4)) AS [avgsig_s]
     FROM [Waits] AS [W1]
     INNER JOIN [Waits] AS [W2]
         ON [W2].[RowNum] <= [W1].[RowNum]
