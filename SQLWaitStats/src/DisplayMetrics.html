@@ -9,6 +9,7 @@ History :
 - 2017-02-01: OBE - Datasources executed only once for all page (previously by graph)
 - 2017-02-03: OBE - Configure more graphs
 - 2017-03-15: OBE - Connection string is dynamic
+- 2017-03-29: OBE - Debug for Named instance & Case sensitive DB
 
  -->
 <meta charset=utf-8>
@@ -28,19 +29,23 @@ body.waiting * {
 </head>
 
 <body>
+<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" id="config_ico"><path d="M12.793,10.327c0.048-0.099,0.097-0.196,0.138-0.298c0.012-0.023,0.018-0.049,0.028-0.072 c0.03-0.079,0.06-0.158,0.086-0.238c0.005-0.013,0.01-0.023,0.014-0.038c0.008-0.021,0.016-0.041,0.023-0.063L16,8.889V7.111 l-2.918-0.73c-0.009-0.024-0.019-0.047-0.027-0.071c0-0.003-0.001-0.008-0.003-0.012c-0.028-0.085-0.06-0.17-0.093-0.253 c-0.011-0.025-0.018-0.05-0.028-0.075c-0.044-0.107-0.095-0.208-0.144-0.312c-0.011-0.02-0.02-0.04-0.029-0.06 c-0.008-0.015-0.015-0.03-0.021-0.044l1.55-2.582l-1.258-1.258l-2.583,1.549c-0.011-0.005-0.021-0.01-0.031-0.016 c-0.03-0.014-0.059-0.027-0.086-0.041c-0.1-0.047-0.195-0.096-0.298-0.138c-0.025-0.011-0.053-0.019-0.077-0.028 C9.879,3.012,9.804,2.984,9.727,2.958C9.711,2.952,9.694,2.946,9.678,2.94c-0.021-0.007-0.04-0.015-0.061-0.022L8.889,0H7.111 L6.38,2.919C6.361,2.926,6.343,2.934,6.323,2.94C6.308,2.945,6.292,2.952,6.275,2.957C6.199,2.983,6.124,3.011,6.05,3.04 C6.031,3.047,6.011,3.05,5.992,3.058C5.983,3.061,5.977,3.066,5.968,3.07c-0.102,0.042-0.2,0.09-0.299,0.139 C5.644,3.222,5.617,3.233,5.592,3.246C5.58,3.253,5.566,3.258,5.555,3.264L2.973,1.715L1.715,2.972l1.55,2.581 C3.259,5.564,3.254,5.574,3.249,5.585c-0.015,0.03-0.028,0.06-0.043,0.09C3.159,5.771,3.111,5.867,3.07,5.966 c-0.012,0.029-0.02,0.058-0.031,0.086c-0.028,0.072-0.055,0.146-0.08,0.218c-0.006,0.018-0.014,0.035-0.02,0.053 C2.934,6.343,2.925,6.362,2.918,6.381L0,7.111v1.777l2.918,0.729C2.925,9.639,2.934,9.659,2.941,9.68 C2.945,9.693,2.95,9.707,2.956,9.72C2.981,9.798,3.01,9.875,3.04,9.95c0.007,0.019,0.01,0.039,0.017,0.058 c0.003,0.008,0.01,0.016,0.013,0.025c0.044,0.104,0.094,0.205,0.144,0.306c0.01,0.022,0.02,0.044,0.031,0.063 c0.007,0.014,0.013,0.028,0.02,0.043l-1.549,2.582l1.257,1.258l2.581-1.549c0.012,0.006,0.023,0.01,0.036,0.018 c0.025,0.013,0.053,0.024,0.079,0.037c0.101,0.049,0.2,0.099,0.304,0.141c0.022,0.01,0.046,0.016,0.069,0.026 c0.082,0.033,0.166,0.063,0.252,0.093c0.007,0.002,0.014,0.004,0.021,0.006c0.023,0.009,0.045,0.018,0.068,0.026L7.111,16h1.777 l0.729-2.917c0.021-0.008,0.042-0.016,0.062-0.023c0.014-0.005,0.026-0.009,0.04-0.015c0.082-0.027,0.163-0.057,0.241-0.088 c0.022-0.01,0.045-0.016,0.065-0.025c0.109-0.045,0.216-0.096,0.321-0.147c0.017-0.009,0.033-0.016,0.05-0.025 c0.017-0.007,0.032-0.015,0.048-0.022l2.582,1.55l1.258-1.259l-1.549-2.581c0.006-0.011,0.009-0.021,0.015-0.032 C12.766,10.385,12.779,10.355,12.793,10.327z M11.482,8.696c-0.019,0.092-0.054,0.179-0.08,0.269 c-0.037,0.135-0.069,0.271-0.123,0.398c-0.037,0.09-0.092,0.174-0.137,0.26c-0.062,0.119-0.118,0.244-0.192,0.354 c-0.087,0.131-0.196,0.251-0.303,0.373c-0.083,0.093-0.168,0.181-0.259,0.265c-0.133,0.122-0.271,0.241-0.417,0.341 c-0.089,0.059-0.186,0.1-0.278,0.151c-0.112,0.06-0.22,0.129-0.337,0.177c-0.094,0.038-0.195,0.061-0.293,0.092 c-0.125,0.039-0.248,0.086-0.376,0.11c-0.103,0.021-0.211,0.021-0.316,0.032c-0.25,0.025-0.499,0.025-0.748-0.001 c-0.104-0.011-0.21-0.011-0.311-0.031c-0.131-0.024-0.258-0.073-0.387-0.114c-0.094-0.03-0.192-0.051-0.282-0.088 c-0.112-0.046-0.217-0.112-0.324-0.17c-0.075-0.042-0.153-0.076-0.226-0.122c-0.021-0.015-0.047-0.024-0.068-0.038 c-0.122-0.082-0.232-0.184-0.345-0.281c-0.137-0.117-0.262-0.246-0.379-0.383c-0.087-0.104-0.181-0.203-0.254-0.312 c-0.07-0.105-0.122-0.221-0.181-0.333C4.817,9.549,4.759,9.459,4.718,9.36c-0.042-0.103-0.065-0.213-0.1-0.321 c-0.035-0.116-0.08-0.23-0.104-0.35C4.492,8.572,4.489,8.448,4.479,8.326C4.457,8.099,4.458,7.874,4.48,7.647 C4.492,7.535,4.493,7.42,4.515,7.312C4.541,7.177,4.59,7.048,4.632,6.917c0.005-0.016,0.01-0.032,0.015-0.048 c0.025-0.075,0.04-0.154,0.07-0.225c0.05-0.122,0.121-0.236,0.186-0.352C4.95,6.204,4.989,6.111,5.045,6.027 c0.103-0.153,0.227-0.296,0.356-0.436c0.064-0.07,0.132-0.136,0.203-0.201c0.135-0.125,0.273-0.246,0.423-0.345 C6.12,4.983,6.224,4.938,6.324,4.885c0.104-0.057,0.207-0.122,0.316-0.167c0.112-0.046,0.232-0.073,0.35-0.108 c0.061-0.019,0.121-0.04,0.183-0.054c0.045-0.011,0.089-0.03,0.134-0.039c0.189-0.038,0.386-0.053,0.586-0.059 c0.07-0.002,0.14-0.002,0.211,0c0.2,0.006,0.4,0.021,0.591,0.06c0.102,0.02,0.199,0.059,0.298,0.088 c0.125,0.036,0.25,0.065,0.37,0.115C9.46,4.76,9.55,4.818,9.645,4.868c0.111,0.058,0.227,0.11,0.332,0.18 c0.133,0.089,0.256,0.201,0.379,0.311c0.103,0.091,0.199,0.188,0.289,0.29c0.109,0.122,0.219,0.244,0.308,0.376 c0.071,0.104,0.121,0.221,0.181,0.333c0.049,0.094,0.107,0.184,0.147,0.279c0.053,0.126,0.085,0.262,0.122,0.395 c0.021,0.074,0.05,0.147,0.066,0.222c0.004,0.017,0.01,0.032,0.014,0.049c0.041,0.206,0.061,0.419,0.064,0.636 c0,0.026,0.005,0.053,0.005,0.08C11.55,8.25,11.525,8.477,11.482,8.696z"></path></svg>
+
 
 <div id="context_div">
-	<form name="form_cs" onsubmit="return false;">
-	<input type="text" id="form_connection_string" size=80 value="Provider=SQLOLEDB;Data Source=LOCALHOST;Initial Catalog=msdb;Integrated Security=SSPI;Packet Size=10240"/>
-	<label>
-		<input type="submit" onclick="update_cs();" style="display: none;"/>
-		<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24"><path d="M2 8L8 29 32 6 11 16 2 8z" style="opacity:0.49923078;stroke-width:1px;color:#05ff05"></path><path d="M1 7L7 28 31 5 10 15 1 7z" style="stroke-width:1px;fill:#00a100;stroke:#005b00"></path></svg>
-	</label>
-</form>
+	<form name="form_cs" onsubmit="update_cs();">
+		<input type="text" id="form_connection_string" size=80 value="Provider=SQLOLEDB;Data Source=BASICAAGN1.lab.local\\DBAINSTANCE;Initial Catalog=msdb;Integrated Security=SSPI;Packet Size=10240"/>
+		<label>
+			<input type="submit" onclick="update_cs();" style="display: none;"/>
+			<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" id="ok_ico"><path d="M2 8L8 29 32 6 11 16 2 8z" style="opacity:0.49923078;stroke-width:1px;color:#05ff05"></path><path d="M1 7L7 28 31 5 10 15 1 7z" style="stroke-width:1px;fill:#00a100;stroke:#005b00"></path></svg>
+		</label>
+	</form>
     <svg id="context" height="80" width="1000">
         <text x="15" y="15" fill="black">Context graph</text>
     </svg>
 </div>
+
+
 
 <div id="focus">
 <h3>Start interval : <span id="start_time">01/01/2010 12:00</span> - End interval : <span id="end_time">07/01/2010 12:00</span></h3>
@@ -49,6 +54,10 @@ body.waiting * {
 <script>
 // JSONPath 0.8.0 - Copyright 2007 Stefan Goessner (goessner.net)
 function jsonPath(obj,expr,arg){var P={resultType:arg&&arg.resultType||"VALUE",result:[],normalize:function(a){var b=[];return a.replace(/[\['](\??\(.*?\))[\]']/g,function(a,c){return"[#"+(b.push(c)-1)+"]"}).replace(/'?\.'?|\['?/g,";").replace(/;;;|;;/g,";..;").replace(/;$|'?\]|'$/g,"").replace(/#([0-9]+)/g,function(a,c){return b[c]})},asPath:function(a){for(var b=a.split(";"),c="$",d=1,e=b.length;d<e;d++)c+=/^[0-9*]+$/.test(b[d])?"["+b[d]+"]":"['"+b[d]+"']";return c},store:function(a,b){return a&&(P.result[P.result.length]="PATH"==P.resultType?P.asPath(a):b),!!a},trace:function(a,b,c){if(a){var d=a.split(";"),e=d.shift();if(d=d.join(";"),b&&b.hasOwnProperty(e))P.trace(d,b[e],c+";"+e);else if("*"===e)P.walk(e,d,b,c,function(a,b,c,d,e){P.trace(a+";"+c,d,e)});else if(".."===e)P.trace(d,b,c),P.walk(e,d,b,c,function(a,b,c,d,e){"object"==typeof d[a]&&P.trace("..;"+c,d[a],e+";"+a)});else if(/,/.test(e))for(var f=e.split(/'?,'?/),g=0,h=f.length;g<h;g++)P.trace(f[g]+";"+d,b,c);else/^\(.*?\)$/.test(e)?P.trace(P.eval(e,b,c.substr(c.lastIndexOf(";")+1))+";"+d,b,c):/^\?\(.*?\)$/.test(e)?P.walk(e,d,b,c,function(a,b,c,d,e){P.eval(b.replace(/^\?\((.*?)\)$/,"$1"),d[a],a)&&P.trace(a+";"+c,d,e)}):/^(-?[0-9]*):(-?[0-9]*):?([0-9]*)$/.test(e)&&P.slice(e,d,b,c)}else P.store(c,b)},walk:function(a,b,c,d,e){if(c instanceof Array)for(var f=0,g=c.length;f<g;f++)f in c&&e(f,a,b,c,d);else if("object"==typeof c)for(var h in c)c.hasOwnProperty(h)&&e(h,a,b,c,d)},slice:function(a,b,c,d){if(c instanceof Array){var e=c.length,f=0,g=e,h=1;a.replace(/^(-?[0-9]*):(-?[0-9]*):?(-?[0-9]*)$/g,function(a,b,c,d){f=parseInt(b||f),g=parseInt(c||g),h=parseInt(d||h)}),f=f<0?Math.max(0,f+e):Math.min(e,f),g=g<0?Math.max(0,g+e):Math.min(e,g);for(var i=f;i<g;i+=h)P.trace(i+";"+b,c,d)}},eval:function(x,_v,_vname){try{return $&&_v&&eval(x.replace(/@/g,"_v"))}catch(a){throw new SyntaxError("jsonPath: "+a.message+": "+x.replace(/@/g,"_v").replace(/\^/g,"_a"))}}},$=obj;if(expr&&obj&&("VALUE"==P.resultType||"PATH"==P.resultType))return P.trace(P.normalize(expr).replace(/^\$;/,""),obj,"$"),!!P.result.length&&P.result}
+
+function findAndRemoveJSON(a,b,c){a.forEach(function(d,e){d[b]===c&&a.splice(e,1)})}
+function getIndexJSON(a,b,c){for(var d=0;d<a.length;d++)if(a[d][b]===c)return d}
+
 </script>
 <script>
 // https://d3js.org Version 4.4.2. Copyright 2017 Mike Bostock.
@@ -69,13 +78,13 @@ this._y1=this._y2,this._y2=n}};var Gb=function t(n){function e(t){return n?new m
 var navigationString = '                                                                                                                                         \
 {   "datasources": [                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                \
     {   "name": "SQLWaits",                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         \
-        "SQL": "with topCounterType as (select wait_type,rank() OVER (ORDER BY max(wait_s)-min(wait_s) desc) as ranked from msdb.monitoring.wait_stats where date>$varDebut and date<=$varFin group by wait_type), countervalues as ( select date as CounterDateTime, LAG(date) over (partition by wait_type order by date) as CounterDateTime_previous, wait_type, ISNULL(wait_s-lag(wait_s) over (partition by wait_type order by date),0) as wait_s,ntile(100) over (order by date) as decile from msdb.monitoring.wait_stats where date>$varDebut and date<=$varFin) select CONVERT(VARCHAR(19),max([CounterDateTime]),120) as CounterDateTime, wait_type as [CounterName], sum(wait_s)/NULLIF((DATEDIFF(s,max(CounterDateTime_previous),max([CounterDateTime]))),0) as avg_value from countervalues where wait_type in (select wait_type from topCounterType where ranked<6) group by decile,wait_type order by decile,3 desc"                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               \
+        "SQL": "with topCounterType as (select wait_type,rank() OVER (ORDER BY max(wait_s)-min(wait_s) desc) as ranked from monitoring.wait_stats where date>$varDebut and date<=$varFin group by wait_type), countervalues as ( select date as CounterDateTime, LAG(date) over (partition by wait_type order by date) as CounterDateTime_previous, wait_type, ISNULL(wait_s-lag(wait_s) over (partition by wait_type order by date),0) as wait_s,ntile(100) over (order by date) as decile from monitoring.wait_stats where date>$varDebut and date<=$varFin) select CONVERT(VARCHAR(19),max([CounterDateTime]),120) as CounterDateTime, wait_type as [CounterName], sum(wait_s)/NULLIF((DATEDIFF(s,max(CounterDateTime_previous),max([CounterDateTime]))),0) as avg_value from countervalues where wait_type in (select wait_type from topCounterType where ranked<6) group by decile,wait_type order by decile,3 desc"                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               \
     },                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              \
     {   "name": "Perfmon",                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          \
-        "SQL": "with countervalues as (SELECT ce.objectname,ce.countername,ce.instancename,cd.countervalue,NTILE(100) OVER(ORDER BY cd.[CounterDateTime]) as decile, [CounterDateTime] from msdb.dbo.counterdata cd inner join msdb.dbo.counterdetails ce on cd.counterid=ce.counterid where cd.counterdatetime>$varDebut and cd.counterdatetime<=$varFin) SELECT CONVERT(VARCHAR(19),max([CounterDateTime]),120) as CounterDateTime,objectname+ISNULL(\' \'+countername+ISNULL(\' \'+instancename,\'\'),\'\') as CounterName,avg(countervalue) as avg_value from countervalues group by objectname+ISNULL(\' \'+countername+ISNULL(\' \'+instancename,\'\'),\'\'),decile order by 1,2"  \
+        "SQL": "with CounterValues as (SELECT ce.ObjectName,ce.CounterName,ce.InstanceName,cd.CounterValue,NTILE(100) OVER(ORDER BY cd.[CounterDateTime]) as decile, [CounterDateTime] from dbo.CounterData cd inner join dbo.CounterDetails ce on cd.CounterID=ce.CounterID where cd.[CounterDateTime]>$varDebut and cd.[CounterDateTime]<=$varFin) SELECT CONVERT(VARCHAR(19),max([CounterDateTime]),120) as CounterDateTime,ObjectName+ISNULL(\' \'+CounterName+ISNULL(\' \'+InstanceName,\'\'),\'\') as CounterName,avg(CounterValue) as avg_value from CounterValues group by ObjectName+ISNULL(\' \'+CounterName+ISNULL(\' \'+InstanceName,\'\'),\'\'),decile order by 1,2"  \
     },                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              \
     {   "name": "Context",                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          \
-        "SQL": "with countervalues as (SELECT ce.objectname,ce.countername,ce.instancename,cd.countervalue,NTILE(50) OVER(ORDER BY cd.CounterDateTime) as decile, CounterDateTime from msdb.dbo.counterdata cd inner join msdb.dbo.counterdetails ce on cd.counterid=ce.counterid where countername=\'% Processor Time\') SELECT CONVERT(VARCHAR(19),max([CounterDateTime]),120) as CounterDateTime,objectname+ISNULL(\' \'+countername+ISNULL(\' \'+instancename,\'\'),\'\') as CounterName,avg(countervalue) as avg_value from countervalues group by objectname+ISNULL(\' \'+countername+ISNULL(\' \'+instancename,\'\'),\'\'),decile order by 1,2,3"                                                                                                                 \
+        "SQL": "with CounterValues as (SELECT ce.ObjectName,ce.CounterName,ce.InstanceName,cd.CounterValue,NTILE(50) OVER(ORDER BY cd.[CounterDateTime]) as decile, CounterDateTime from dbo.CounterData cd inner join dbo.CounterDetails ce on cd.CounterID=ce.CounterID where [CounterName]=\'% Processor Time\') SELECT CONVERT(VARCHAR(19),max([CounterDateTime]),120) as CounterDateTime,ObjectName+ISNULL(\' \'+CounterName+ISNULL(\' \'+InstanceName,\'\'),\'\') as CounterName,avg(CounterValue) as avg_value from CounterValues group by ObjectName+ISNULL(\' \'+CounterName+ISNULL(\' \'+InstanceName,\'\'),\'\'),decile order by 1,2,3"                                                                                                                 \
     }                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               \
     ],                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              \
     "navigation":[                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  \
@@ -95,7 +104,7 @@ var navigationString = '                                                        
         {   "div": "ov_Disk2",                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       \
             "type": "bar",                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          \
             "dataSource": "Perfmon",                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                \
-            "metrics": ["PhysicalDisk Disk Read Bytes/sec 1 D","PhysicalDisk Disk Write Bytes/sec 1 D"]                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 \
+            "metrics": ["PhysicalDisk Disk Read Bytes/sec 1 D","PhysicalDisk Disk Write Bytes/sec 1 D", "PhysicalDisk Disk Read Bytes/sec 2 E","PhysicalDisk Disk Write Bytes/sec 2 E"]                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 \
         },                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          \
         {   "div": "ov_Network",                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       \
             "type": "bar",                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          \
@@ -105,7 +114,7 @@ var navigationString = '                                                        
         {   "div": "ov_Network2",                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       \
             "type": "bar",                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          \
             "dataSource": "Perfmon",                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                \
-            "metrics": ["Network Interface Packets Received/sec vmxnet","Network Interface Packets Sent/sec vmxnet"]                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 \
+            "metrics": ["MSSQL$CASQITPMS:SQL Statistics Batch Requests/sec"]                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 \
         },                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          \
         {   "div": "ov_Memory",                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     \
             "type": "bar",                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          \
@@ -152,7 +161,7 @@ var parseStr_to_Date = d3.timeParse("%Y-%m-%d %H:%M:%S");
 var formatDate_to_Str = d3.timeFormat("%Y-%m-%d %H:%M:%S");
 
 var json = JSON.parse(navigationString);
-var connection_string = "Provider=SQLOLEDB;Data Source=LOCALHOST;Initial Catalog=msdb;Integrated Security=SSPI;Packet Size=10240";
+var connection_string = "Provider=SQLOLEDB;Data Source=BASICAAGN1.lab.local\\DBAINSTANCE;Initial Catalog=msdb;Integrated Security=SSPI;Packet Size=10240";
 var connection;
 var datasources = new Object();
 // Global variables for display
@@ -226,10 +235,15 @@ function ExecuteSQL(SQLQuery){
         connection = new ActiveXObject("ADODB.Connection");
         connection.Open(connection_string);
     }
-
-    // Execute the query
+	
     var rs = new ActiveXObject("ADODB.Recordset");
-    rs.Open(SQLQuery, connection);
+	// Execute the query
+	try{
+		rs.Open(SQLQuery, connection);
+	}catch(e){
+		console.log("Error with query : ");
+		console.log(SQLQuery);
+	}
     return rs;
 }
 
@@ -237,15 +251,14 @@ function ExecuteSQL(SQLQuery){
 function RefreshDatasourceWithStartEndTime(datasource_name,startTime,endTime){
     // Get the graph query
     var Query = jsonPath(json,"$.datasources[?(@.name=='"+datasource_name+"')].SQL").toString();
-    //Query = Query.replace("$varDebut","'"+formatDate_to_Str(startTime)+"'").replace("$varFin","'"+formatDate_to_Str(endTime)+"'");
     Query = Query.replace(/\$varDebut/g,"'"+formatDate_to_Str(startTime)+"'").replace(/\$varFin/g,"'"+formatDate_to_Str(endTime)+"'");
     var resultSet = ExecuteSQL(Query);
 
     datasources[datasource_name] = [];
-    if (!resultSet.eof){
+    if (!(resultSet == undefined || resultSet.state == 0 || resultSet.eof)){
         resultSet.MoveFirst;
     }
-    while(!resultSet.eof){
+    while(!(resultSet == undefined || resultSet.state == 0 || resultSet.eof)){
         var new_line = {};
         new_line['CounterDateTime'] = parseStr_to_Date(resultSet("CounterDateTime").value);
         new_line['counterName'] = (resultSet("CounterName").value);
@@ -254,7 +267,9 @@ function RefreshDatasourceWithStartEndTime(datasource_name,startTime,endTime){
         datasources[datasource_name].push(new_line);
         resultSet.movenext;
     }
-    resultSet.close;
+	if (!(resultSet == undefined || resultSet.state == 0)){
+		resultSet.close;
+    }
 }
 
 // Function to draw context graph (top page graph)
@@ -342,6 +357,46 @@ function brushended(){
         .html("Start interval:"+formatDate_to_Str(x_context_selected.domain()[0])+" - End interval:"+formatDate_to_Str(x_context_selected.domain()[1]));
 
     UpdateFocusGraphs();
+}
+
+// Function to configure a focus graph
+function startConfigFocus(current_focusGraph){
+	d3.select("#"+current_focusGraph.id+"_textarea")
+		.style("display","inline");
+	d3.select("#okconf_"+current_focusGraph.id)
+		.style("display","inline");
+	d3.select("#config_"+current_focusGraph.id)
+		.style("display","none");
+	d3.select("#"+current_focusGraph.id)
+		.style("display","none");	
+}
+
+// Function to confirm a configuration of focus graph
+function endConfigFocus(current_focusGraph){
+	var new_textarea_div = document.getElementById(current_focusGraph.id+"_textarea").value;
+	var new_json = false;
+	try{
+		var new_json_div = JSON.parse(new_textarea_div);
+		new_json = true;
+	}
+	catch(e){
+		alert("Invalid JSON");
+		document.getElementById(current_focusGraph.id+"_textarea").value = JSON.stringify(jsonPath(json,"$.navigation[*].graphs[?(@.div=='"+current_focusGraph.id+"')]")[0], undefined, 4)
+	}
+
+	if(new_json){
+		d3.select("#"+current_focusGraph.id+"_textarea").style("display","none");
+		d3.select("#okconf_"+current_focusGraph.id).style("display","none");
+		d3.select("#config_"+current_focusGraph.id).style("display","inline");
+		d3.select("#"+current_focusGraph.id).style("display","inline");
+		
+		var current_focusGraph_prefix = current_focusGraph.id.substr(0, current_focusGraph.id.indexOf('_')); 
+		var page_index = getIndexJSON(json.navigation,"prefix",current_focusGraph_prefix);
+		findAndRemoveJSON(json.navigation[page_index].graphs,"div",current_focusGraph.id);
+		json.navigation[page_index].graphs.push(new_json_div);
+		
+		DrawGraph(new_json_div);
+	}
 }
 
 // Function to draw specific focus graph (parameter : object with 4 fields : div, type, dataSource and metrics)
@@ -434,20 +489,44 @@ function UpdateFocusGraphs(){
 }
 
 // Function to create the focused graphs (1st rendering)
-function PrepareFocusedGraphs(){
+function PrepareFocusGraphs(){
     var page_prefix = GetUrlValue("p");
     if (page_prefix == undefined) { page_prefix = "ov"; }
 
     var graphs = jsonPath(json,"$.navigation[?(@.prefix=='"+page_prefix+"')].graphs")[0];
     var graphs_count = graphs.length;
     for (var i = 0; i < graphs_count; i++) {
-        d3.select("#focus")
-            .append("div")
-            .attr("id",graphs[i].div+"_div")
-                .append("svg")
-                .attr("id",graphs[i].div)
-                    .text(graphs[i].dataSource);
+        var oneFocusDIV = d3.select("#focus")
+								.append("div")
+								.attr("id",graphs[i].div+"_div");
 
+        oneFocusDIV.append("svg")
+			.attr("id",graphs[i].div)
+			.text(graphs[i].dataSource);
+			
+		oneFocusDIV.append("textarea")
+			.attr("id",graphs[i].div+"_textarea")
+			.attr("style","width:"+(focus_width + margin.left + margin.right)+"px;height:"+(focus_height + margin.top + margin.bottom - 10)+"px;display:none;")
+				.text(JSON.stringify(jsonPath(json,"$.navigation[*].graphs[?(@.div=='"+graphs[i].div+"')]")[0], undefined, 4));
+			
+		oneFocusDIV.append("svg")
+			.attr("id","config_"+graphs[i].div)
+			.attr("width","18")
+			.attr("height","18")
+			.attr("onclick","startConfigFocus("+graphs[i].div+")")
+			.attr("style","vertical-align:top")
+				.append("use")
+				.attr("xlink:href","#config_ico");
+		
+		oneFocusDIV.append("svg")
+			.attr("id","okconf_"+graphs[i].div)
+			.attr("width","32")
+			.attr("height","32")
+			.attr("onclick","endConfigFocus("+graphs[i].div+")")
+			.attr("style","vertical-align:top;display:none;")
+				.append("use")
+				.attr("xlink:href","#ok_ico");
+		
         RefreshDatasourceWithStartEndTime("Perfmon",x_context_selected.domain()[0],x_context_selected.domain()[1]);
         RefreshDatasourceWithStartEndTime("SQLWaits",x_context_selected.domain()[0],x_context_selected.domain()[1]);
         DrawGraph(graphs[i]);
@@ -458,7 +537,7 @@ function PrepareFocusedGraphs(){
 // Main function executed on page loaded
 function pageLoaded(){
     UpdateContextGraph();
-    PrepareFocusedGraphs();
+    PrepareFocusGraphs();
 
     window.onbeforeunload = function (e) {
         if (connection !== undefined){
