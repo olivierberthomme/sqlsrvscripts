@@ -9,7 +9,8 @@ History :
 - 2017-02-01: OBE - Datasources executed only once for all page (previously by graph)
 - 2017-02-03: OBE - Configure more graphs
 - 2017-03-15: OBE - Connection string is dynamic
-- 2017-03-29: OBE - Debug for Named instance & Case sensitive DB
+- 2017-03-29: OBE - Debug for Named instance & Case sensitive DB + Focus graph JSON now updatables
+- 2017-03-30: OBE - Debug on connection string form + handle some connection errors
 
  -->
 <meta charset=utf-8>
@@ -33,8 +34,8 @@ body.waiting * {
 
 
 <div id="context_div">
-	<form name="form_cs" onsubmit="update_cs();">
-		<input type="text" id="form_connection_string" size=80 value="Provider=SQLOLEDB;Data Source=BASICAAGN1.lab.local\\DBAINSTANCE;Initial Catalog=msdb;Integrated Security=SSPI;Packet Size=10240"/>
+	<form name="form_cs" onsubmit="return false">
+		<input type="text" id="form_connection_string" size=80 value="Provider=SQLOLEDB;Data Source=lpc:localhost;Initial Catalog=msdb;Integrated Security=SSPI"/>
 		<label>
 			<input type="submit" onclick="update_cs();" style="display: none;"/>
 			<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" id="ok_ico"><path d="M2 8L8 29 32 6 11 16 2 8z" style="opacity:0.49923078;stroke-width:1px;color:#05ff05"></path><path d="M1 7L7 28 31 5 10 15 1 7z" style="stroke-width:1px;fill:#00a100;stroke:#005b00"></path></svg>
@@ -78,7 +79,7 @@ this._y1=this._y2,this._y2=n}};var Gb=function t(n){function e(t){return n?new m
 var navigationString = '                                                                                                                                         \
 {   "datasources": [                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                \
     {   "name": "SQLWaits",                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         \
-        "SQL": "with topCounterType as (select wait_type,rank() OVER (ORDER BY max(wait_s)-min(wait_s) desc) as ranked from monitoring.wait_stats where date>$varDebut and date<=$varFin group by wait_type), countervalues as ( select date as CounterDateTime, LAG(date) over (partition by wait_type order by date) as CounterDateTime_previous, wait_type, ISNULL(wait_s-lag(wait_s) over (partition by wait_type order by date),0) as wait_s,ntile(100) over (order by date) as decile from monitoring.wait_stats where date>$varDebut and date<=$varFin) select CONVERT(VARCHAR(19),max([CounterDateTime]),120) as CounterDateTime, wait_type as [CounterName], sum(wait_s)/NULLIF((DATEDIFF(s,max(CounterDateTime_previous),max([CounterDateTime]))),0) as avg_value from countervalues where wait_type in (select wait_type from topCounterType where ranked<6) group by decile,wait_type order by decile,3 desc"                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               \
+        "SQL": "with topCounterType as (select wait_type,rank() OVER (ORDER BY max(wait_s)-min(wait_s) desc) as ranked from monitoring.wait_stats where date>$varDebut and date<=$varFin group by wait_type), countervalues as ( select date as CounterDateTime, LAG(date) over (partition by wait_type order by date) as CounterDateTime_previous, wait_type, ISNULL(wait_s-lag(wait_s) over (partition by wait_type order by date),0) as wait_s,ntile(100) over (order by date) as decile from monitoring.wait_stats where date>$varDebut and date<=$varFin) select CONVERT(VARCHAR(19),max([CounterDateTime]),120) as CounterDateTime, wait_type as [CounterName], ISNULL(sum(wait_s)/NULLIF((DATEDIFF(s,max(CounterDateTime_previous),max([CounterDateTime]))),0),0) as avg_value from countervalues where wait_type in (select wait_type from topCounterType where ranked<6) group by decile,wait_type order by decile,3 desc"                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               \
     },                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              \
     {   "name": "Perfmon",                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          \
         "SQL": "with CounterValues as (SELECT ce.ObjectName,ce.CounterName,ce.InstanceName,cd.CounterValue,NTILE(100) OVER(ORDER BY cd.[CounterDateTime]) as decile, [CounterDateTime] from dbo.CounterData cd inner join dbo.CounterDetails ce on cd.CounterID=ce.CounterID where cd.[CounterDateTime]>$varDebut and cd.[CounterDateTime]<=$varFin) SELECT CONVERT(VARCHAR(19),max([CounterDateTime]),120) as CounterDateTime,ObjectName+ISNULL(\' \'+CounterName+ISNULL(\' \'+InstanceName,\'\'),\'\') as CounterName,avg(CounterValue) as avg_value from CounterValues group by ObjectName+ISNULL(\' \'+CounterName+ISNULL(\' \'+InstanceName,\'\'),\'\'),decile order by 1,2"  \
@@ -104,17 +105,17 @@ var navigationString = '                                                        
         {   "div": "ov_Disk2",                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       \
             "type": "bar",                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          \
             "dataSource": "Perfmon",                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                \
-            "metrics": ["PhysicalDisk Disk Read Bytes/sec 1 D","PhysicalDisk Disk Write Bytes/sec 1 D", "PhysicalDisk Disk Read Bytes/sec 2 E","PhysicalDisk Disk Write Bytes/sec 2 E"]                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 \
+            "metrics": ["PhysicalDisk Disk Read Bytes/sec ","PhysicalDisk Disk Write Bytes/sec "]                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 \
         },                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          \
         {   "div": "ov_Network",                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       \
             "type": "bar",                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          \
             "dataSource": "Perfmon",                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                \
-            "metrics": ["Network Interface Bytes Received/sec vmxnet","Network Interface Bytes Sent/sec vmxnet"]                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 \
+            "metrics": ["Network Interface Bytes Received/sec ","Network Interface Bytes Sent/sec "]                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 \
         },                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         \
         {   "div": "ov_Network2",                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       \
             "type": "bar",                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          \
             "dataSource": "Perfmon",                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                \
-            "metrics": ["MSSQL$CASQITPMS:SQL Statistics Batch Requests/sec"]                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 \
+            "metrics": ["SQL Statistics Batch Requests/sec"]                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 \
         },                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          \
         {   "div": "ov_Memory",                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     \
             "type": "bar",                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          \
@@ -129,7 +130,7 @@ var navigationString = '                                                        
         {   "div": "ov_Waits",                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     \
             "type": "bar",                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          \
             "dataSource": "SQLWaits",                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                \
-            "metrics": ["A","B","C","D","E"]                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                \
+            "metrics": [""]                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                \
         }                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           \
         ]                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           \
     },                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              \
@@ -161,7 +162,7 @@ var parseStr_to_Date = d3.timeParse("%Y-%m-%d %H:%M:%S");
 var formatDate_to_Str = d3.timeFormat("%Y-%m-%d %H:%M:%S");
 
 var json = JSON.parse(navigationString);
-var connection_string = "Provider=SQLOLEDB;Data Source=BASICAAGN1.lab.local\\DBAINSTANCE;Initial Catalog=msdb;Integrated Security=SSPI;Packet Size=10240";
+var connection_string = "Provider=SQLOLEDB;Data Source=lpc:localhost;Initial Catalog=msdb;Integrated Security=SSPI";
 var connection;
 var datasources = new Object();
 // Global variables for display
@@ -181,16 +182,15 @@ var documentOverlay={show:function(){var a="black",b=.7,c=document.getElementByI
 //=======================================================================//
 
 // Read connection_string from user
-function update_cs(callback){
-
-	// Save current connection string
-	new_connection_string = document.getElementById("form_connection_string").value;
-	var new_cs = false;
+function update_cs(){
 	d3.select("body").classed("waiting",true);
 	document.body.style.cursor='wait';
 	documentOverlay.show();
 	
 	setTimeout(function() {
+		// Save current connection string
+		new_connection_string = document.getElementById("form_connection_string").value;
+		var new_cs = false;
 		try{
 			new_connection = new ActiveXObject("ADODB.Connection");
 			new_connection.Open(new_connection_string);
@@ -230,15 +230,14 @@ function GetUrlValue(VarSearch){
 
 // Execute a SQL query and return a javascript RecordSet
 function ExecuteSQL(SQLQuery){
-    // Create SQL Server connection if not initiated
-    if (connection == undefined){
-        connection = new ActiveXObject("ADODB.Connection");
-        connection.Open(connection_string);
-    }
-	
     var rs = new ActiveXObject("ADODB.Recordset");
 	// Execute the query
 	try{
+		// Create SQL Server connection if not initiated
+		if (connection == undefined){
+			connection = new ActiveXObject("ADODB.Connection");
+			connection.Open(connection_string);
+		}
 		rs.Open(SQLQuery, connection);
 	}catch(e){
 		console.log("Error with query : ");
@@ -280,19 +279,22 @@ function UpdateContextGraph(){
 
     var context_data_array = {};
     context_data_array = [];
-    if (!rs_context.eof){
+	if (!(rs_context == undefined || rs_context.state == 0 || rs_context.eof)){
         rs_context.MoveFirst;
     }
-    while(!rs_context.eof){
+	while(!(rs_context == undefined || rs_context.state == 0 || rs_context.eof)){
         var new_line = {};
         new_line['CounterDateTime'] = parseStr_to_Date(rs_context("CounterDateTime").value);
         new_line['avg_value'] = (rs_context("avg_value").value);
         context_data_array.push(new_line);
         rs_context.movenext;
     }
-    rs_context.close;
+	if (!(rs_context == undefined || rs_context.state == 0)){
+		rs_context.close;
+	}
 
-    // Draw the context graph
+	if(context_data_array.length > 0){
+		// Draw the context graph
         d3.select("body").select("#context").selectAll("*").remove();
         var context = d3.select("body").select("#context")
             .attr("width", context_width + margin.left + margin.right)
@@ -331,13 +333,30 @@ function UpdateContextGraph(){
             .call(d3.brushX()
                 .extent([[0, 0], [context_width, context_height]])
                 .on("end", brushended));
-    // End draw the context graph
+		// End draw the context graph
 
-    // Update text about selected timerange
-    d3.select("h3").remove();
-    d3.select("body").select("#focus")
-        .insert("h3",":first-child")
-        .html("Start interval:"+formatDate_to_Str(x_context_selected.domain()[0])+" - End interval:"+formatDate_to_Str(x_context_selected.domain()[1]));
+		// Update text about selected timerange
+		d3.select("h3").remove();
+		d3.select("body").select("#focus")
+			.insert("h3",":first-child")
+			.html("Start interval:"+formatDate_to_Str(x_context_selected.domain()[0])+" - End interval:"+formatDate_to_Str(x_context_selected.domain()[1]));
+	}else{
+		// case no data from context query
+		d3.select("#context").selectAll("*").remove();
+        d3.select("#context")
+            .attr("width", focus_width + margin.left + margin.right)
+            .attr("height", focus_height + margin.top + margin.bottom)
+				.append("text")
+				.attr("x","15")
+				.attr("y","15")
+				.attr("fill","black")
+				.text("General graph - no data");
+
+		d3.select("h3").remove();
+		d3.select("body").select("#focus")
+			.insert("h3",":first-child")
+			.html("Start interval: ??? - End interval: ???");
+	}
 }
 
 // Function triggered on select on context graph
@@ -412,7 +431,8 @@ function DrawGraph(graph){
             );
     });
 
-    // Draw one focus graph
+	if(graph_datasource.length > 0){	
+		// Draw one focus graph
         d3.select("#"+graph.div).selectAll("*").remove();
         var focus = d3.select("#"+graph.div)
             .attr("width", focus_width + margin.left + margin.right)
@@ -468,7 +488,19 @@ function DrawGraph(graph){
         focus.append("g")
             .attr("class", "y axis")
             .call(d3.axisLeft(y_focus));
-    // End draw the focus graph
+		// End draw the focus graph
+	}else{
+		// Case no data for graph
+        d3.select("#"+graph.div).selectAll("*").remove();
+        d3.select("#"+graph.div)
+            .attr("width", focus_width + margin.left + margin.right)
+            .attr("height", focus_height + margin.top + margin.bottom)
+				.append("text")
+				.attr("x","15")
+				.attr("y","15")
+				.attr("fill","black")
+				.text(graph.div+" - no data");
+	}
 
 }
 
@@ -502,7 +534,13 @@ function PrepareFocusGraphs(){
 
         oneFocusDIV.append("svg")
 			.attr("id",graphs[i].div)
-			.text(graphs[i].dataSource);
+            .attr("width", focus_width + margin.left + margin.right)
+            .attr("height", focus_height + margin.top + margin.bottom)
+				.append("text")
+				.attr("x","15")
+				.attr("y","15")
+				.attr("fill","black")
+				.text(graphs[i].div+" - no data");
 			
 		oneFocusDIV.append("textarea")
 			.attr("id",graphs[i].div+"_textarea")
@@ -527,9 +565,12 @@ function PrepareFocusGraphs(){
 				.append("use")
 				.attr("xlink:href","#ok_ico");
 		
-        RefreshDatasourceWithStartEndTime("Perfmon",x_context_selected.domain()[0],x_context_selected.domain()[1]);
-        RefreshDatasourceWithStartEndTime("SQLWaits",x_context_selected.domain()[0],x_context_selected.domain()[1]);
-        DrawGraph(graphs[i]);
+		if(x_context_selected !== undefined){
+			// TODO : Dynamic datasources
+			RefreshDatasourceWithStartEndTime("Perfmon",x_context_selected.domain()[0],x_context_selected.domain()[1]);
+			RefreshDatasourceWithStartEndTime("SQLWaits",x_context_selected.domain()[0],x_context_selected.domain()[1]);
+			DrawGraph(graphs[i]);
+		}
     }
 
 }

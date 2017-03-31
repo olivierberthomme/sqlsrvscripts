@@ -12,6 +12,7 @@
 #  - 0.3 - 19/12/2016 : Changes on DSN creation
 #  - 0.4 - 05/02/2017 : Add display on collected metrics + Change collect frequency to 15s + Debug for standard instance
 #  - 1.0 - 29/03/2017 : Add metric "Avg. Disk Bytes/Transfert"
+#  - 1.1 - 30/03/2017 : Limit the number of collected metrics to 45j (=260 000 values)
 
 ## Import functions
 $scriptPath = split-path -parent $MyInvocation.MyCommand.Definition
@@ -87,7 +88,7 @@ foreach ($AnInstanceName in $Instances)
 
 # Create the Perfmon DataCollector
 Write-Output "Metric listed into $pwd\$cntrname.txt"
-$strCMD = "C:\Windows\System32\logman.exe create counter $cntrname -si 00:00:15 -cf $pwd\$cntrname.txt -f sql -v mmddhhmm -o $cntrname!log1 -rf 168:00:00"
+$strCMD = "C:\Windows\System32\logman.exe create counter $cntrname -si 00:00:15 -cf $pwd\$cntrname.txt -f sql -sc 260000 -v mmddhhmm -o $cntrname!log1 -rf 168:00:00"
 
 # Confirm before DataCollector creation
 Write-Output "Proceed ?"
