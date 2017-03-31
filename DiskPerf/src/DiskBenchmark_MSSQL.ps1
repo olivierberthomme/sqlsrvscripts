@@ -19,6 +19,7 @@
 #  - 1.0b - 13/06/2016 : Usual workload implemented
 #  - 1.1  - 14/07/2016 : Parameters are now interactive if missing (AMA request)
 #  - 1.2  - 16/03/2016 : Update on parameters for LogWriter
+#  - 1.3  - 31/03/2016 : Miror updates on HTML text
 #########################################################################################################
 Param(
     [Parameter(Mandatory = $true, HelpMessage="Data drive (default C:)")]
@@ -45,7 +46,7 @@ if (! $Duration) 				{ $Duration=5 }
 if (! $File_size) 				{ $File_size=5 }
 
 $scriptPath = split-path -parent $MyInvocation.MyCommand.Definition
-$version = "1.2"
+$version = "1.3"
 
 function generate_CSV{
 	# Make a copy of previous file
@@ -302,7 +303,7 @@ $outstandings = 128 	# 128 = Standard Edition ; 5000 = Enterprise Edition
 $threads = $cpuCount	# Depends of MAX Dop and Workload
 $TestFilePath = "$Data_drive\diskspd_tmp.dat"
 $DRA_param = "-c$($file_size)G -d$duration_run -w0 -b512K -si -Sh -W -o$outstandings -t$threads -L $TestFilePath".Split()
-$FuncDRA_param = "Function Read-Ahead parameters : $DRA_param"
+$FuncDRA_param = "diskspd.exe parameters : $DRA_param"
 benchmark $DRA_param ([ref]$Data_RunDetails) ([ref]$dataDRA_latency) ([ref]$dataDRA_iops) ([ref]$dataDRA_cores) "Data Read Ahead"
 Remove-Item $TestFilePath
 
@@ -311,7 +312,7 @@ $outstandings = 32		#
 $threads = 1 			# Equal number of NUMA nodes
 $TestFilePath = "$Data_drive\diskspd_tmp.dat"
 $DLW_param = "-c$($file_size)G -d$duration_run -w100 -b64K -r -Sh -W -o$outstandings -t$threads -L $TestFilePath".Split()
-$FuncDLW_param = "Function Lazy Writer parameters : $DLW_param"
+$FuncDLW_param = "diskspd.exe parameters : $DLW_param"
 benchmark $DLW_param ([ref]$Data_RunDetails) ([ref]$dataDLW_latency) ([ref]$dataDLW_iops) ([ref]$dataDLW_cores) "Data Lazy Writer"
 Remove-Item $TestFilePath
 
@@ -320,7 +321,7 @@ $outstandings = 4		# max 116 outstandings
 $threads = 1 			# Equal number of NUMA nodes (and max 4)
 $TestFilePath = "$Log_drive\diskspd_tmp.dat"
 $LRW_param = "-c$($file_size)G -d$duration_run -w100 -b8K -Sh -W -o$outstandings -t$threads -L $TestFilePath".Split()
-$FuncLRW_param = "Function Log Writer parameters : $LRW_param"
+$FuncLRW_param = "diskspd.exe parameters : $LRW_param"
 benchmark $LRW_param ([ref]$Data_RunDetails) ([ref]$dataLWR_latency) ([ref]$dataLWR_iops) ([ref]$dataLWR_cores) "Log Writer"
 Remove-Item $TestFilePath
 
@@ -335,7 +336,7 @@ $outstandings = 4		#
 $threads = $cpuCount	# Depends of MAX Dop and Workload
 $TestFilePath = "$Data_drive\diskspd_tmp.dat"
 $DayWrkLoad_param = "-c$($file_size)G -d$duration_run -w85 -b32K -Sh -r -W -o$outstandings -t$threads -L $TestFilePath".Split()
-$FuncDayWrkLoad_param = "Function Log Writer parameters : $DayWrkLoad_param"
+$FuncDayWrkLoad_param = "diskspd.exe parameters : $DayWrkLoad_param"
 benchmark $DayWrkLoad_param ([ref]$Data_RunDetails) ([ref]$dataDayWrkLoad_latency) ([ref]$dataDayWrkLoad_iops) ([ref]$dataDayWrkLoad_cores) "Working hours workload"
 Remove-Item $TestFilePath
 
@@ -350,7 +351,7 @@ $outstandings = 16		#
 $threads = $cpuCount	# Depends of MAX Dop and Workload
 $TestFilePath = "$Data_drive\diskspd_tmp.dat"
 $NightWrkLoad_param = "-c$($file_size)G -d$duration_run -w30 -b64K -Sh -r -W -o$outstandings -t$threads -L $TestFilePath".Split()
-$FuncNightWrkLoad_param = "Function Log Writer parameters : $NightWrkLoad_param"
+$FuncNightWrkLoad_param = "diskspd.exe parameters : $NightWrkLoad_param"
 benchmark $NightWrkLoad_param ([ref]$Data_RunDetails) ([ref]$dataNightWrkLoad_latency) ([ref]$dataNightWrkLoad_iops) ([ref]$dataNightWrkLoad_cores) "Non working hours workload"
 Remove-Item $TestFilePath
 
