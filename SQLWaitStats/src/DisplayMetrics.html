@@ -11,6 +11,7 @@ History :
 - 2017-03-15: OBE - Connection string is dynamic
 - 2017-03-29: OBE - Debug for Named instance & Case sensitive DB + Focus graph JSON now updatables
 - 2017-03-30: OBE - Debug on connection string form + handle some connection errors
+- 2017-06-23: OBE - Editable timerange (user text input) + select max 24h on start
 
  -->
 <meta charset=utf-8>
@@ -48,7 +49,7 @@ body.waiting * {
 
 
 <div id="focus">
-<h3>Start interval : <span id="start_time" style="color:#585858; border: 1px solid black; padding: 3px;">01/01/2010 12:00</span> - End interval : <span id="end_time" style="color:#585858; border: 1px solid black; padding: 3px;">07/01/2010 12:00</span></h3>
+<h3>Start interval : <span id="start_time" style="color:#585858; border: 1px solid black; padding: 3px;" contenteditable="true">01/01/2010 12:00</span> - End interval : <span id="end_time" style="color:#585858; border: 1px solid black; padding: 3px;" contenteditable="true">07/01/2010 12:00</span></h3>
 </div>
 
 <script>
@@ -84,7 +85,7 @@ var navigationString = '                                                        
         "SQL": "with CounterValues as (SELECT ce.ObjectName,ce.CounterName,ce.InstanceName,cd.CounterValue,NTILE(100) OVER(ORDER BY cd.[CounterDateTime]) as decile, [CounterDateTime] from dbo.CounterData cd inner join dbo.CounterDetails ce on cd.CounterID=ce.CounterID where cd.[CounterDateTime]>$varDebut and cd.[CounterDateTime]<=$varFin) SELECT CONVERT(VARCHAR(19),max([CounterDateTime]),120) as CounterDateTime,ObjectName+ISNULL(\' \'+CounterName+ISNULL(\' \'+InstanceName,\'\'),\'\') as CounterName,avg(CounterValue) as avg_value from CounterValues group by ObjectName+ISNULL(\' \'+CounterName+ISNULL(\' \'+InstanceName,\'\'),\'\'),decile order by 1,2"  \
     },                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              \
     {   "name": "Context",                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          \
-        "SQL": "with CounterValues as (SELECT ce.ObjectName,ce.CounterName,ce.InstanceName,cd.CounterValue,NTILE(50) OVER(ORDER BY cd.[CounterDateTime]) as decile, CounterDateTime from dbo.CounterData cd inner join dbo.CounterDetails ce on cd.CounterID=ce.CounterID where [CounterName]=\'% Processor Time\') SELECT CONVERT(VARCHAR(19),max([CounterDateTime]),120) as CounterDateTime,ObjectName+ISNULL(\' \'+CounterName+ISNULL(\' \'+InstanceName,\'\'),\'\') as CounterName,avg(CounterValue) as avg_value from CounterValues group by ObjectName+ISNULL(\' \'+CounterName+ISNULL(\' \'+InstanceName,\'\'),\'\'),decile order by 1,2,3"                                                                                                                 \
+        "SQL": "with CounterValues as (SELECT ce.ObjectName,ce.CounterName,ce.InstanceName,cd.CounterValue,NTILE(25) OVER(ORDER BY cd.[CounterDateTime]) as decile, CounterDateTime from dbo.CounterData cd inner join dbo.CounterDetails ce on cd.CounterID=ce.CounterID where [CounterName]=\'% Processor Time\') SELECT CONVERT(VARCHAR(19),max([CounterDateTime]),120) as CounterDateTime,ObjectName+ISNULL(\' \'+CounterName+ISNULL(\' \'+InstanceName,\'\'),\'\') as CounterName,avg(CounterValue) as avg_value from CounterValues group by ObjectName+ISNULL(\' \'+CounterName+ISNULL(\' \'+InstanceName,\'\'),\'\'),decile order by 1,2,3"                                                                                                                 \
     }                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               \
     ],                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              \
     "navigation":[                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  \
@@ -172,6 +173,8 @@ var margin = {top: 20, right: 20, bottom: 30, left: 100},
     focus_height = 180 - margin.top - margin.bottom;
 var x_context;
 var x_context_selected;
+var brushD3;
+
 
 // variable to grey out the page : documentOverlay.show() or documentOverlay.hide()
 var documentOverlay={show:function(){var a="black",b=.7,c=document.getElementById("doc_overlay");if(c)documentOverlay.style(c,{background:a||"#000",display:"block"});else{var c=document.createElement("div");c.id="doc_overlay",documentOverlay.style(c,{position:"absolute",top:0,left:0,width:"100%",height:documentOverlay.getDocHeight()+"px",background:a,zIndex:1e3,opacity:b,filter:"alpha(opacity="+100*b+")"}),document.getElementsByTagName("body")[0].appendChild(c)}},hide:function(){var a=document.getElementById("doc_overlay");a.style.display="none"},style:function(a,b){for(var c in b)a.style[c]=b[c]},getDocHeight:function(){var a,b;return self.innerHeight?a=self.innerHeight:document.documentElement&&document.documentElement.clientHeight&&(a=document.documentElement.clientHeight),document.body&&(b=document.body.clientHeight),b>a&&(a=b),a}};
@@ -307,8 +310,18 @@ function UpdateContextGraph(){
         // Scale the range of the data
         x_context.domain(d3.extent(context_data_array, function(d) { return d.CounterDateTime; }));
         y_context.domain([0, d3.max(context_data_array, function(d) { return d.avg_value; })]);
+		
+		// Compute timerange selection
         x_context_selected = x_context.copy(); // Start with all interval selected
-
+		// Check if selected timerange >24h
+		var selectedContextMin = x_context.domain()[0];
+		var selectedContextMax = x_context.domain()[1];
+		var endDateMinusOneDay = new Date(x_context.domain()[1]);
+		endDateMinusOneDay.setDate(endDateMinusOneDay.getDate() - 1);
+		// context timerange > 1 day
+		if((x_context.domain()[0].getTime()) < (endDateMinusOneDay.getTime())){
+			selectedContextMin = endDateMinusOneDay;
+		}
 
         var context_value_line = d3.area()
             .x(function(d)  { return x_context(d.CounterDateTime); })
@@ -327,14 +340,20 @@ function UpdateContextGraph(){
           .call(d3.axisLeft(y_context));
 
         // Add selectable on area
+		brushD3 = d3.brushX()
+						.extent([[0, 0], [context_width, context_height]])
+						.on("end", brushended);
+		
         context.append("g")
             .attr("class", "x brush")
-            .call(d3.brushX()
-                .extent([[0, 0], [context_width, context_height]])
-                .on("end", brushended));
+			.attr("id","x_selection_svg_node")
+            .call(brushD3)
+			.call(brushD3.move, [x_context_selected(selectedContextMin),x_context_selected(selectedContextMax)]);
 		// End draw the context graph
+		
+		x_context_selected.domain([selectedContextMin, selectedContextMax]);
 
-		// Update text about selected timerange
+		// Update text with selected timerange
 		document.getElementById("start_time").textContent = formatDate_to_Str(x_context_selected.domain()[0]);
 		document.getElementById("end_time").textContent = formatDate_to_Str(x_context_selected.domain()[1]);
 		
@@ -361,8 +380,17 @@ function UpdateContextGraph(){
 function brushended(){
     if (!d3.event.sourceEvent) return; // Only transition after input.
     if (!d3.event.selection) {
-         // Empty selections = All range
-        x_context_selected = x_context.copy();
+         // Empty selections = last 24h
+		// Check if selected timerange >24h
+		var selectedContextMin = x_context.domain()[0];
+		var selectedContextMax = x_context.domain()[1];
+		var endDateMinusOneDay = new Date(x_context.domain()[1]);
+		endDateMinusOneDay.setDate(endDateMinusOneDay.getDate() - 1);
+		// context timerange > 1 day
+		if((x_context.domain()[0].getTime()) < (endDateMinusOneDay.getTime())){
+			selectedContextMin = endDateMinusOneDay;
+		}
+		x_context_selected.domain([selectedContextMin, selectedContextMax]);
     }else{
         x_context_selected.domain(d3.event.selection.map(x_context.invert));
     }
@@ -370,12 +398,20 @@ function brushended(){
     // Update text about selected timerange
 	document.getElementById("start_time").textContent = formatDate_to_Str(x_context_selected.domain()[0]);
 	document.getElementById("end_time").textContent = formatDate_to_Str(x_context_selected.domain()[1]);
-		
+	
     UpdateFocusGraphs();
 }
+
 // Function to update the selection based on user input
 function selectRangeByUserInput(){
-	// TODO Read user input
+	// Only if user changed timerange
+	if(document.getElementById("start_time").textContent === formatDate_to_Str(x_context_selected.domain()[0]) 
+		&& document.getElementById("end_time").textContent === formatDate_to_Str(x_context_selected.domain()[1])) return;	
+	
+	x_context_selected.domain([parseStr_to_Date(document.getElementById("start_time").textContent), parseStr_to_Date(document.getElementById("end_time").textContent)]);
+    brushD3.move(d3.select(".brush"), [x_context(x_context_selected.domain()[0]),x_context(x_context_selected.domain()[1])] );
+	
+	UpdateFocusGraphs();
 }
 
 // Function to configure a focus graph
